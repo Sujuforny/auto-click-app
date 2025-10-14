@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Auto Clicker</string>
+    <string name="accessibility_service_description">Auto Clicker service that can perform taps on other apps based on coordinates and intervals you set.</string>
+</resources>
