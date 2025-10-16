@@ -10,7 +10,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,7 +59,8 @@ fun AutoClickerApp(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             
@@ -310,6 +313,106 @@ fun AutoClickerApp(
                 }
             }
             
+            // Command File Card
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Command File",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    
+                    Text(
+                        text = "Execute complex sequences from command files",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                try {
+                                    val conditionalPath = viewModel.createConditionalSampleFile()
+                                    viewModel.executeCommandFile(conditionalPath)
+                                    activity.moveTaskToBack(true)
+                                } catch (e: Exception) {
+                                    // Error will be shown in UI state
+                                }
+                            },
+                            enabled = uiState.isServiceEnabled && !uiState.isClicking && !uiState.isLoading,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Run Sample")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                // TODO: Add file picker for custom command files
+                            },
+                            enabled = uiState.isServiceEnabled && !uiState.isClicking && !uiState.isLoading,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Load File")
+                        }
+                    }
+                    
+                    Text(
+                        text = "Sample file location: ${viewModel.getCommandFilesDirectory()}/conditional_sample.txt",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            // Command Text Area Card
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Quick Command Editor",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    
+                    Text(
+                        text = "Write and execute commands directly",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    OutlinedTextField(
+                        value = uiState.commandText,
+                        onValueChange = viewModel::updateCommandText,
+                        label = { Text("Commands") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        placeholder = { Text("Enter commands here...\nExample:\nlogs Hello World\nclick 500 800\ndelay 1000") },
+                        maxLines = 10
+                    )
+                    
+                    Button(
+                        onClick = {
+                            viewModel.executeCommandText()
+                            activity.moveTaskToBack(true)
+                        },
+                        enabled = uiState.isServiceEnabled && !uiState.isClicking && !uiState.isLoading && uiState.commandText.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (uiState.isLoading) "Executing..." else "Execute Commands")
+                    }
+                }
+            }
+            
             // Instructions Card
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -346,6 +449,140 @@ fun AutoClickerApp(
                     Text(
                         text = "6. Use floating stop button or reopen app to stop",
                         style = MaterialTheme.typography.bodyMedium
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Command File Commands:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    
+                    Text(
+                        text = "Basic Commands:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = "• click x y - Tap at coordinates",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• delay ms - Wait for milliseconds",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• threefingertap x y - Three finger tap",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• swipe startX startY endX endY duration - Swipe gesture",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• longpress x y duration - Long press",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• stop - Stop the sequence",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Conditional Commands:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = "• if condition ... endif - Conditional execution",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• while condition ... endwhile - Loop while true",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• repeat count ... endrepeat - Repeat N times",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Flow Control Commands:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = "• label name - Create a label",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• goto name - Jump to label",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• gotoif condition name - Jump if condition true",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Variable Commands:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = "• set name value - Set variable",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• get name - Get variable value",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Debug Commands:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = "• log message - Log a message",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• logvar name - Log variable value",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• logs message - Display message overlay on screen for 3 seconds",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Condition Examples:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = "• \$var == 5 - Variable equals 5",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• @counter < 10 - Counter less than 10",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• \$status != error - Status not error",
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }

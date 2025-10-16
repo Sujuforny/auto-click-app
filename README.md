@@ -1,80 +1,407 @@
-# Auto Clicker App
+# Auto Clicker - Command File System
 
-An Android application that provides automated tapping functionality using accessibility services.
+A powerful Android automation tool that allows you to create complex click sequences using simple text-based command files.
 
-## Features
+## Table of Contents
 
-- **Coordinate-based tapping**: Set exact X and Y coordinates for tapping
-- **Configurable intervals**: Set the time between taps in milliseconds
-- **Modern Material Design UI**: Clean and intuitive interface
-- **Real-time service status**: Shows whether the accessibility service is enabled
-- **Cross-app functionality**: Works on any app once enabled
+- [Overview](#overview)
+- [Getting Started](#getting-started)
+- [Command Syntax](#command-syntax)
+- [Basic Commands](#basic-commands)
+- [Conditional Commands](#conditional-commands)
+- [Variable Commands](#variable-commands)
+- [Flow Control Commands](#flow-control-commands)
+- [Debug and Logging Commands](#debug-and-logging-commands)
+- [Examples](#examples)
+- [Troubleshooting](#troubleshooting)
 
-## How to Use
+## Overview
+
+The Auto Clicker uses a text-based command file system that allows you to:
+- Perform clicks, swipes, and long presses
+- Use conditional logic (if, while, repeat)
+- Manage variables and counters
+- Control program flow with labels and goto
+- Display messages and debug information
+
+## Getting Started
 
 ### 1. Enable Accessibility Service
-1. Install the app on your Android device
-2. Open the app and tap "Open Settings" if the service is not enabled
-3. In Accessibility Settings, find "Auto Clicker" and enable it
-4. Grant all necessary permissions when prompted
+- Go to Settings > Accessibility > Auto Clicker
+- Enable the service
+- Grant necessary permissions
 
-### 2. Grant Overlay Permission
-1. Tap "Grant Permission" if overlay permission is not enabled
-2. In the overlay permission settings, enable "Display over other apps" for Auto Clicker
-3. This allows the floating stop button to appear on top of other apps
+### 2. Create Command Files
+You can create command files in two ways:
+- **Quick Editor**: Use the textarea in the app
+- **File System**: Place `.txt` files in the app's internal storage
 
-### 3. Configure Settings
-1. **Set Coordinates**: Enter the X and Y coordinates where you want to tap
-   - You can use developer options to show pointer location for precise coordinates
-   - Default coordinates are set to (500, 1000) as an example
+### 3. Execute Commands
+- Use "Run Sample" to test with the included example
+- Use "Execute Commands" to run textarea content
+- Use "Load File" to execute custom command files
 
-2. **Set Interval**: Enter the time between taps in milliseconds
-   - 1000ms = 1 second
-   - 500ms = 0.5 seconds
-   - Default is 1000ms
+## Command Syntax
 
-### 4. Start Auto Clicking
-1. Tap "Start Clicking" to begin the automated tapping
-2. **The app will automatically minimize to the home screen**
-3. **A floating red "STOP" button will appear on top of other apps** (if overlay permission is granted)
-4. Switch to any other app - the auto clicker will continue working
-5. **Stop the automation by:**
-   - Clicking the floating "STOP" button, OR
-   - Reopening the app and tapping "Stop Clicking"
+### General Rules
+- One command per line
+- Commands are case-insensitive
+- Comments start with `#`
+- Variables are referenced with `$variableName`
+- Whitespace is ignored
 
-## Technical Details
+### File Structure
+```
+# This is a comment
+command1 parameter1 parameter2
+command2 parameter1
 
-- **Minimum SDK**: 24 (Android 7.0)
-- **Target SDK**: 36 (Android 14)
-- **Architecture**: Uses AccessibilityService for cross-app functionality
-- **UI Framework**: Jetpack Compose with Material Design 3
-- **Language**: Kotlin
-
-## Permissions Required
-
-- `SYSTEM_ALERT_WINDOW`: For overlay functionality (floating stop button)
-- `FOREGROUND_SERVICE`: For background service operation
-- `FOREGROUND_SERVICE_SPECIAL_USE`: For overlay service
-- Accessibility Service: For performing gestures on other apps
-
-## Safety Notes
-
-- Use responsibly and in accordance with app terms of service
-- Some apps may detect automated interactions
-- Test coordinates carefully to avoid unintended actions
-- The app requires manual accessibility service activation for security
-
-## Building the App
-
-```bash
-./gradlew assembleDebug
+# Another comment
+command3 parameter1 parameter2 parameter3
 ```
 
-The APK will be generated in `app/build/outputs/apk/debug/app-debug.apk`
+## Basic Commands
+
+### Click Commands
+```bash
+# Basic click at coordinates
+click 500 800
+
+# Three-finger tap
+threefingertap 300 400
+
+# Long press (duration in milliseconds)
+longpress 400 500 2000
+
+# Swipe from one point to another
+swipe 100 200 500 600 1000
+```
+
+### Timing Commands
+```bash
+# Delay execution (milliseconds)
+delay 1000
+
+# Stop the sequence
+stop
+```
+
+### Comments
+```bash
+# This is a comment
+# Comments are ignored during execution
+```
+
+## Conditional Commands
+
+### If Statements
+```bash
+# Simple if statement
+if $counter == 1
+    click 300 600
+    delay 500
+endif
+
+# If-else statement
+if $counter >= 5
+    click 500 800
+    delay 1000
+else
+    click 200 400
+    delay 500
+endif
+```
+
+### While Loops
+```bash
+# While loop
+while $counter < 10
+    click 400 500
+    delay 1000
+    set counter $counter + 1
+endwhile
+```
+
+### Repeat Loops
+```bash
+# Repeat a block of commands
+repeat 5
+    click 300 400
+    delay 500
+endrepeat
+```
+
+## Variable Commands
+
+### Setting Variables
+```bash
+# Set a variable
+set counter 0
+set max_attempts 5
+set status retry
+
+# Set variable with calculation
+set counter $counter + 1
+set total $counter * 2
+```
+
+### Getting Variables
+```bash
+# Get variable value (usually used in conditions)
+get counter
+```
+
+### Variable Usage in Conditions
+```bash
+# Compare variables
+if $counter == $max_attempts
+    goto end_sequence
+endif
+
+# Compare with numbers
+if $counter >= 5
+    logs Maximum attempts reached
+endif
+```
+
+## Flow Control Commands
+
+### Labels
+```bash
+# Create a label
+label retry_loop
+label end_sequence
+label start_here
+```
+
+### Goto Commands
+```bash
+# Jump to a label
+goto retry_loop
+goto end_sequence
+
+# Conditional jump
+gotoif $counter >= 5 end_sequence
+gotoif $status == success final_click
+```
+
+## Debug and Logging Commands
+
+### Log Commands
+```bash
+# Log to console (Logcat)
+log Starting automation sequence
+log Counter value: $counter
+
+# Log variable value
+logvar counter
+logvar status
+```
+
+### Screen Display Commands
+```bash
+# Display message overlay on screen for 3 seconds
+logs Automation sequence started!
+logs Counter: $counter
+logs Maximum attempts reached!
+```
+
+## Examples
+
+### Simple Click Sequence
+```bash
+# Simple automation sequence
+logs Starting simple sequence
+click 500 800
+delay 1000
+click 300 600
+delay 1000
+logs Sequence completed
+stop
+```
+
+### Conditional Automation
+```bash
+# Set initial variables
+set counter 0
+set max_attempts 5
+
+# Start sequence
+logs Starting conditional automation
+delay 1000
+
+# Label for retry loop
+label retry_loop
+
+# Increment counter
+set counter $counter + 1
+logs Attempt number $counter
+
+# Click at different locations based on counter
+if $counter == 1
+    logs First attempt
+    click 300 600
+    delay 500
+endif
+
+if $counter == 2
+    logs Second attempt
+    click 400 700
+    delay 500
+endif
+
+# Check if we should continue or stop
+if $counter >= $max_attempts
+    logs Maximum attempts reached
+    goto end_sequence
+endif
+
+# Wait and retry
+logs Waiting before retry
+delay 2000
+goto retry_loop
+
+# End sequence label
+label end_sequence
+logs Automation completed
+stop
+```
+
+### Loop with Variables
+```bash
+# Repeat with counter
+set counter 0
+repeat 3
+    logs Click number $counter
+    click 400 500
+    delay 1000
+    set counter $counter + 1
+endrepeat
+
+logs All clicks completed
+stop
+```
 
 ## Troubleshooting
 
-- **Service not working**: Ensure accessibility service is enabled in Settings
-- **Coordinates not accurate**: Use developer options to show pointer location
-- **App crashes**: Check that all permissions are granted
-- **Tapping too fast/slow**: Adjust the interval setting accordingly
+### Common Issues
+
+#### Commands Not Executing
+- Ensure accessibility service is enabled
+- Check that coordinates are within screen bounds
+- Verify command syntax is correct
+
+#### Variable Issues
+- Variables must be set before use
+- Use `$variableName` to reference variables
+- Check variable names for typos
+
+#### Loop Problems
+- Ensure `endif`, `endwhile`, `endrepeat` close blocks
+- Check loop conditions for infinite loops
+- Use `stop` command to end sequences
+
+#### Overlay Permission Issues
+- Grant overlay permission in app settings
+- Restart the app after granting permissions
+
+### Debug Tips
+
+#### Use Log Commands
+```bash
+# Log important values
+logvar counter
+logvar status
+log Current step: clicking at 500, 800
+```
+
+#### Use Screen Messages
+```bash
+# Display progress on screen
+logs Starting step 1
+logs Step 1 completed
+logs Moving to step 2
+```
+
+#### Test with Simple Commands
+```bash
+# Start with basic commands
+logs Test message
+click 500 800
+delay 1000
+stop
+```
+
+### Error Messages
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Unknown command" | Typo in command name | Check command spelling |
+| "Requires parameter" | Missing required parameter | Add missing parameter |
+| "Variable not found" | Using undefined variable | Set variable before use |
+| "Label not found" | Referencing non-existent label | Create label before goto |
+
+### Best Practices
+
+1. **Start Simple**: Begin with basic commands before adding complexity
+2. **Use Comments**: Document your automation logic
+3. **Test Incrementally**: Add one feature at a time
+4. **Use Logs**: Add logging to track execution flow
+5. **Handle Errors**: Use conditional logic to handle edge cases
+6. **Set Timeouts**: Use delays to prevent rapid execution
+7. **Clean Up**: Always end sequences with `stop`
+
+### Performance Tips
+
+- Use appropriate delays between commands
+- Avoid infinite loops without exit conditions
+- Test on different screen sizes
+- Consider device performance for complex sequences
+
+## Advanced Usage
+
+### Nested Conditions
+```bash
+if $counter >= 1
+    if $counter <= 3
+        logs Counter is between 1 and 3
+        click 300 400
+    else
+        logs Counter is greater than 3
+        click 500 600
+    endif
+endif
+```
+
+### Complex Variable Operations
+```bash
+set base_value 10
+set multiplier 2
+set result $base_value * $multiplier
+logs Result: $result
+```
+
+### Multiple Labels and Jumps
+```bash
+label start
+logs Starting sequence
+gotoif $skip_first middle
+
+label first_step
+logs First step
+click 100 200
+delay 500
+
+label middle
+logs Middle step
+click 300 400
+delay 500
+
+label end
+logs Sequence completed
+stop
+```
+
+---
+
+For more examples and advanced usage, check the sample files included with the app or create your own command sequences using the Quick Command Editor.

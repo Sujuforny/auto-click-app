@@ -1,0 +1,87 @@
+# Sample Auto Clicker Command File with Goto and Log Commands
+# Demonstrates labels, goto, conditional jumps, and logging
+
+# Set initial variables
+set counter 0
+set max_attempts 5
+set status retry
+
+# Start sequence
+log Starting automation sequence
+logs Automation sequence started!
+delay 1000
+click 500 800
+log Initial click performed
+logs First click completed
+delay 1000
+
+# Label for retry loop
+label retry_loop
+
+# Increment counter
+set counter $counter + 1
+logvar counter
+log Attempt number $counter
+delay 500
+
+# Click at different locations based on counter
+if $counter == 1
+    log Performing first attempt click
+    click 300 600
+    delay 500
+endif
+
+if $counter == 2
+    log Performing second attempt click
+    click 400 700
+    delay 500
+endif
+
+if $counter == 3
+    log Performing third attempt click
+    click 600 500
+    delay 500
+endif
+
+# Check if we should continue or stop
+if $counter >= $max_attempts
+    log Maximum attempts reached, ending sequence
+    logs Maximum attempts reached!
+    goto end_sequence
+endif
+
+# Wait and retry
+log Waiting before retry
+logs Waiting before retry...
+delay 2000
+goto retry_loop
+
+# End sequence label
+label end_sequence
+
+# Final actions
+log Performing final actions
+delay 1000
+click 500 300
+logvar status
+delay 1000
+
+# Conditional goto example
+set status success
+log Status changed to success
+gotoif $status == success final_click
+
+# This won't execute because status is success
+log This should not appear
+click 100 100
+
+# Final click label
+label final_click
+log Performing final click
+click 700 400
+delay 1000
+
+# Stop the sequence
+log Automation sequence completed
+logs Automation completed successfully!
+stop

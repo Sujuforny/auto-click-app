@@ -1,0 +1,4 @@
+#variable
+set a 1
+
+log variable $a

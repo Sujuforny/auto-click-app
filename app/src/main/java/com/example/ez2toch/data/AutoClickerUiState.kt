@@ -8,7 +8,8 @@ data class AutoClickerUiState(
     val isClicking: Boolean = false,
     val hasOverlayPermission: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val commandText: String = "logs Starting quick test\nclick 500 800\ndelay 1000\nlogs First click done\nclick 300 600\ndelay 1000\nlogs Test completed"
 )
 
 data class ClickSettings(
