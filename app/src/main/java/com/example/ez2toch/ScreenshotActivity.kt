@@ -19,6 +19,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ez2toch.service.ScreenshotService
+import com.example.ez2toch.service.ScreenshotCallback
+import com.example.ez2toch.service.ColorAnalysisCallback
+import com.example.ez2toch.service.ColorAnalysisData
+import com.example.ez2toch.service.PixelColorCallback
+import com.example.ez2toch.service.PixelColorData
 import com.example.ez2toch.ui.theme.Ez2tochTheme
 import com.example.ez2toch.viewmodel.AutoClickerViewModel
 
@@ -43,11 +49,15 @@ class ScreenshotActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScreenshotScreen(
-    viewModel: AutoClickerViewModel = viewModel()
-) {
+fun ScreenshotScreen() {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    
+    // Pixel color coordinate inputs
+    var xCoordinate by remember { mutableStateOf("") }
+    var yCoordinate by remember { mutableStateOf("") }
     
     Scaffold(
         topBar = {
@@ -101,7 +111,7 @@ fun ScreenshotScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isRootAvailable()) 
+                    containerColor = if (ScreenshotService.getInstance().isRootAvailable()) 
                         MaterialTheme.colorScheme.primaryContainer 
                     else 
                         MaterialTheme.colorScheme.errorContainer
@@ -112,15 +122,15 @@ fun ScreenshotScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = if (isRootAvailable()) "✅ Root Access Available" else "❌ Root Access Required",
+                        text = if (ScreenshotService.getInstance().isRootAvailable()) "✅ Root Access Available" else "❌ Root Access Required",
                         style = MaterialTheme.typography.headlineSmall,
-                        color = if (isRootAvailable()) 
+                        color = if (ScreenshotService.getInstance().isRootAvailable()) 
                             MaterialTheme.colorScheme.onPrimaryContainer 
                         else 
                             MaterialTheme.colorScheme.onErrorContainer
                     )
                     Text(
-                        text = if (isRootAvailable()) 
+                        text = if (ScreenshotService.getInstance().isRootAvailable()) 
                             "Device is rooted and ready for screenshot capture" 
                         else 
                             "Please ensure your device is rooted to use this feature",
@@ -146,21 +156,271 @@ fun ScreenshotScreen(
                     
                     Button(
                         onClick = {
-                            viewModel.takeScreenshotWithRoot()
+                            isLoading = true
+                            errorMessage = null
+                            successMessage = null
+                            
+                            ScreenshotService.getInstance().takeScreenshotWithRoot(context, object : ScreenshotCallback {
+                                override fun onScreenshotSuccess(filename: String) {
+                                    isLoading = false
+                                    successMessage = "Screenshot saved: $filename"
+                                }
+                                
+                                override fun onScreenshotError(error: String) {
+                                    isLoading = false
+                                    errorMessage = error
+                                }
+                                
+                                override fun onScreenshotProgress(message: String) {
+                                    // Progress updates can be shown here if needed
+                                }
+                            })
                         },
-                        enabled = !uiState.isLoading && isRootAvailable(),
+                        enabled = !isLoading && ScreenshotService.getInstance().isRootAvailable(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.secondary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = if (uiState.isLoading) "📸 Capturing Screenshot..." else "📸 Take Screenshot",
+                            text = if (isLoading) "📸 Capturing Screenshot..." else "📸 Take Screenshot",
                             fontSize = 18.sp
                         )
                     }
                     
-                    if (uiState.isLoading) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Color Analysis",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                isLoading = true
+                                errorMessage = null
+                                successMessage = null
+                                
+                                ScreenshotService.getInstance().takeScreenshotAndAnalyzeColors(context, false, object : ColorAnalysisCallback {
+                                    override fun onColorAnalysisSuccess(colorData: ColorAnalysisData) {
+                                        isLoading = false
+                                        val message = buildString {
+                                            append("🎨 Color Analysis Complete!\n\n")
+                                            append("Dominant Color: ${colorData.dominantColorHex}\n")
+                                            append("Brightness: ${(colorData.brightness * 100).toInt()}%\n")
+                                            append("Contrast: ${(colorData.contrast * 100).toInt()}%\n\n")
+                                            append("Top Colors:\n")
+                                            colorData.colorPalette.take(5).forEach { colorInfo ->
+                                                append("• ${colorInfo.hex} (${String.format("%.1f", colorInfo.percentage)}%)\n")
+                                            }
+                                            append("\nScreenshot not saved (analysis only)")
+                                        }
+                                        successMessage = message
+                                    }
+                                    
+                                    override fun onColorAnalysisError(error: String) {
+                                        isLoading = false
+                                        errorMessage = "Color analysis failed: $error"
+                                    }
+                                    
+                                    override fun onColorAnalysisProgress(message: String) {
+                                        // Progress updates
+                                    }
+                                })
+                            },
+                            enabled = !isLoading && ScreenshotService.getInstance().isRootAvailable(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("🎨 Analyze Only")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                isLoading = true
+                                errorMessage = null
+                                successMessage = null
+                                
+                                ScreenshotService.getInstance().takeScreenshotAndAnalyzeColors(context, true, object : ColorAnalysisCallback {
+                                    override fun onColorAnalysisSuccess(colorData: ColorAnalysisData) {
+                                        isLoading = false
+                                        val message = buildString {
+                                            append("🎨 Color Analysis Complete!\n\n")
+                                            append("Dominant Color: ${colorData.dominantColorHex}\n")
+                                            append("Brightness: ${(colorData.brightness * 100).toInt()}%\n")
+                                            append("Contrast: ${(colorData.contrast * 100).toInt()}%\n\n")
+                                            append("Top Colors:\n")
+                                            colorData.colorPalette.take(5).forEach { colorInfo ->
+                                                append("• ${colorInfo.hex} (${String.format("%.1f", colorInfo.percentage)}%)\n")
+                                            }
+                                            if (colorData.filename != null) {
+                                                append("\nScreenshot saved: ${colorData.filename}")
+                                            }
+                                        }
+                                        successMessage = message
+                                    }
+                                    
+                                    override fun onColorAnalysisError(error: String) {
+                                        isLoading = false
+                                        errorMessage = "Color analysis failed: $error"
+                                    }
+                                    
+                                    override fun onColorAnalysisProgress(message: String) {
+                                        // Progress updates
+                                    }
+                                })
+                            },
+                            enabled = !isLoading && ScreenshotService.getInstance().isRootAvailable(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("📸 Analyze + Save")
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Pixel Color Detection",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = xCoordinate,
+                            onValueChange = { xCoordinate = it },
+                            label = { Text("X Coordinate") },
+                            placeholder = { Text("e.g., 100") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading
+                        )
+                        
+                        OutlinedTextField(
+                            value = yCoordinate,
+                            onValueChange = { yCoordinate = it },
+                            label = { Text("Y Coordinate") },
+                            placeholder = { Text("e.g., 200") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading
+                        )
+                    }
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val x = xCoordinate.toIntOrNull()
+                                val y = yCoordinate.toIntOrNull()
+                                
+                                if (x == null || y == null) {
+                                    errorMessage = "Please enter valid X and Y coordinates"
+                                    return@Button
+                                }
+                                
+                                isLoading = true
+                                errorMessage = null
+                                successMessage = null
+                                
+                                ScreenshotService.getInstance().getPixelColorAt(context, x, y, false, object : PixelColorCallback {
+                                    override fun onPixelColorSuccess(pixelData: PixelColorData) {
+                                        isLoading = false
+                                        val message = buildString {
+                                            append("🎯 Pixel Color at ($x, $y):\n\n")
+                                            append("Color: ${pixelData.hex}\n")
+                                            append("RGB: (${pixelData.rgb.first}, ${pixelData.rgb.second}, ${pixelData.rgb.third})\n")
+                                            append("Alpha: ${pixelData.alpha}\n")
+                                            append("Brightness: ${(pixelData.brightness * 100).toInt()}%\n")
+                                            append("\nScreenshot not saved (pixel check only)")
+                                        }
+                                        successMessage = message
+                                    }
+                                    
+                                    override fun onPixelColorError(error: String) {
+                                        isLoading = false
+                                        errorMessage = "Pixel color detection failed: $error"
+                                    }
+                                    
+                                    override fun onPixelColorProgress(message: String) {
+                                        // Progress updates
+                                    }
+                                })
+                            },
+                            enabled = !isLoading && ScreenshotService.getInstance().isRootAvailable() && 
+                                    xCoordinate.isNotBlank() && yCoordinate.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("🎯 Check Pixel")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                val x = xCoordinate.toIntOrNull()
+                                val y = yCoordinate.toIntOrNull()
+                                
+                                if (x == null || y == null) {
+                                    errorMessage = "Please enter valid X and Y coordinates"
+                                    return@Button
+                                }
+                                
+                                isLoading = true
+                                errorMessage = null
+                                successMessage = null
+                                
+                                ScreenshotService.getInstance().getPixelColorAt(context, x, y, true, object : PixelColorCallback {
+                                    override fun onPixelColorSuccess(pixelData: PixelColorData) {
+                                        isLoading = false
+                                        val message = buildString {
+                                            append("🎯 Pixel Color at ($x, $y):\n\n")
+                                            append("Color: ${pixelData.hex}\n")
+                                            append("RGB: (${pixelData.rgb.first}, ${pixelData.rgb.second}, ${pixelData.rgb.third})\n")
+                                            append("Alpha: ${pixelData.alpha}\n")
+                                            append("Brightness: ${(pixelData.brightness * 100).toInt()}%\n")
+                                            if (pixelData.filename != null) {
+                                                append("\nScreenshot saved: ${pixelData.filename}")
+                                            }
+                                        }
+                                        successMessage = message
+                                    }
+                                    
+                                    override fun onPixelColorError(error: String) {
+                                        isLoading = false
+                                        errorMessage = "Pixel color detection failed: $error"
+                                    }
+                                    
+                                    override fun onPixelColorProgress(message: String) {
+                                        // Progress updates
+                                    }
+                                })
+                            },
+                            enabled = !isLoading && ScreenshotService.getInstance().isRootAvailable() && 
+                                    xCoordinate.isNotBlank() && yCoordinate.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("📸 Check + Save")
+                        }
+                    }
+                    
+                    if (isLoading) {
                         LinearProgressIndicator(
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -169,6 +429,33 @@ fun ScreenshotScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+                    
+                    successMessage?.let { success ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = success,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(
+                                    onClick = { successMessage = null }
+                                ) {
+                                    Text("Dismiss")
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -244,7 +531,7 @@ fun ScreenshotScreen(
             }
             
             // Show error message if any
-            uiState.errorMessage?.let { error ->
+            errorMessage?.let { error ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -264,8 +551,7 @@ fun ScreenshotScreen(
                         )
                         TextButton(
                             onClick = { 
-                                // Clear error message
-                                viewModel.clearErrorMessage()
+                                errorMessage = null
                             }
                         ) {
                             Text("Dismiss")
@@ -277,13 +563,3 @@ fun ScreenshotScreen(
     }
 }
 
-@Composable
-private fun isRootAvailable(): Boolean {
-    return try {
-        val process = Runtime.getRuntime().exec("su -c echo test")
-        val exitCode = process.waitFor()
-        exitCode == 0
-    } catch (e: Exception) {
-        false
-    }
-}

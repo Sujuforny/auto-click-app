@@ -2,15 +2,18 @@ package com.example.ez2toch.viewmodel
 
 import android.app.Application
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Build
-import android.os.Environment
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ez2toch.service.AutoClickerService
 import com.example.ez2toch.service.OverlayService
+import com.example.ez2toch.service.ScreenshotService
+import com.example.ez2toch.service.ScreenshotCallback
+import com.example.ez2toch.service.ColorAnalysisCallback
+import com.example.ez2toch.service.ColorAnalysisData
+import com.example.ez2toch.service.PixelColorCallback
+import com.example.ez2toch.service.PixelColorData
 import com.example.ez2toch.data.AutoClickerUiState
 import com.example.ez2toch.data.ClickSettings
 import kotlinx.coroutines.delay
@@ -19,11 +22,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileOutputStream
 import java.io.FileWriter
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
 
 class AutoClickerViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -215,140 +215,105 @@ class AutoClickerViewModel(application: Application) : AndroidViewModel(applicat
     }
     
     fun takeScreenshotWithRoot() {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true)
-                
-                // Check if root access is available
-                if (!isRootAvailable()) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Root access not available. Please ensure device is rooted."
-                    )
-                    return@launch
-                }
-                
-                // Check if screencap command is available
-                if (!checkScreencapAvailable()) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Screencap command not found. Please ensure Android screencap binary is available."
-                    )
-                    return@launch
-                }
-                
-                // Use root access to take screenshot to internal storage
-                val screenshotPath = "${context.filesDir.absolutePath}/screenshot_temp.png"
-                val command = "screencap -p $screenshotPath"
-                
-                // Execute root command
-                val process = Runtime.getRuntime().exec("su -c $command")
-                val exitCode = process.waitFor()
-                
-                // Get error output for debugging
-                val errorStream = process.errorStream
-                val errorOutput = errorStream.bufferedReader().readText()
-                
-                if (exitCode == 0) {
-                    // Read the screenshot file
-                    val screenshotFile = File(screenshotPath)
-                    if (screenshotFile.exists()) {
-                        // Set proper permissions for the file
-                        try {
-                            Runtime.getRuntime().exec("su -c chmod 644 $screenshotPath").waitFor()
-                        } catch (e: Exception) {
-                            // Ignore permission setting errors
-                        }
-                        
-                        val bitmap = BitmapFactory.decodeFile(screenshotPath)
-                        if (bitmap != null) {
-                            // Save to Downloads folder
-                            saveScreenshotToDownloads(bitmap)
-                            // Clean up temp file
-                            screenshotFile.delete()
-                        } else {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                errorMessage = "Failed to decode screenshot. File may be corrupted."
-                            )
-                        }
-                    } else {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = "Screenshot file not found at: $screenshotPath"
-                        )
-                    }
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Root access denied or screencap failed. Error: $errorOutput"
-                    )
-                }
-                
-            } catch (e: Exception) {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        
+        ScreenshotService.getInstance().takeScreenshotWithRoot(context, object : ScreenshotCallback {
+            override fun onScreenshotSuccess(filename: String) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Screenshot failed: ${e.message}"
+                    errorMessage = "Screenshot saved: $filename"
                 )
             }
-        }
-    }
-    
-    fun clearErrorMessage() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
-    }
-    
-    private fun isRootAvailable(): Boolean {
-        return try {
-            val process = Runtime.getRuntime().exec("su -c echo test")
-            val exitCode = process.waitFor()
-            exitCode == 0
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
-    private fun checkScreencapAvailable(): Boolean {
-        return try {
-            val process = Runtime.getRuntime().exec("su -c which screencap")
-            val exitCode = process.waitFor()
-            exitCode == 0
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
-    private fun saveScreenshotToDownloads(bitmap: Bitmap) {
-        try {
-            // Create filename with timestamp
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val filename = "screenshot_$timestamp.png"
             
-            // Get Downloads directory
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            if (!downloadsDir.exists()) {
-                downloadsDir.mkdirs()
+            override fun onScreenshotError(error: String) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = error
+                )
             }
             
-            val file = File(downloadsDir, filename)
-            
-            // Save bitmap to file
-            FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            override fun onScreenshotProgress(message: String) {
+                // Update progress if needed
+                // For now, we'll just keep the loading state
+            }
+        })
+    }
+    
+    fun getPixelColorAt(x: Int, y: Int, saveScreenshot: Boolean) {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        
+        ScreenshotService.getInstance().getPixelColorAt(context, x, y, saveScreenshot, object : PixelColorCallback {
+            override fun onPixelColorSuccess(pixelData: PixelColorData) {
+                val message = buildString {
+                    append("🎯 Pixel Color at ($x, $y):\n\n")
+                    append("Color: ${pixelData.hex}\n")
+                    append("RGB: (${pixelData.rgb.first}, ${pixelData.rgb.second}, ${pixelData.rgb.third})\n")
+                    append("Alpha: ${pixelData.alpha}\n")
+                    append("Brightness: ${(pixelData.brightness * 100).toInt()}%\n")
+                    if (pixelData.screenshotSaved && pixelData.filename != null) {
+                        append("\nScreenshot saved: ${pixelData.filename}")
+                    } else {
+                        append("\nScreenshot not saved (pixel check only)")
+                    }
+                }
+                
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = message
+                )
             }
             
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                errorMessage = "Screenshot saved: $filename"
-            )
+            override fun onPixelColorError(error: String) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Pixel color detection failed: $error"
+                )
+            }
             
-        } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                errorMessage = "Failed to save screenshot: ${e.message}"
-            )
-        }
+            override fun onPixelColorProgress(message: String) {
+                // Update progress if needed
+                // For now, we'll just keep the loading state
+            }
+        })
     }
+    
+    fun takeScreenshotAndAnalyzeColors(saveScreenshot: Boolean) {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        
+        ScreenshotService.getInstance().takeScreenshotAndAnalyzeColors(context, saveScreenshot, object : ColorAnalysisCallback {
+            override fun onColorAnalysisSuccess(colorData: ColorAnalysisData) {
+                val message = buildString {
+                    append("Color Analysis Complete!\n")
+                    append("Dominant Color: ${colorData.dominantColorHex}\n")
+                    append("Brightness: ${(colorData.brightness * 100).toInt()}%\n")
+                    append("Contrast: ${(colorData.contrast * 100).toInt()}%\n")
+                    if (colorData.screenshotSaved && colorData.filename != null) {
+                        append("Screenshot saved: ${colorData.filename}")
+                    } else {
+                        append("Screenshot not saved (analysis only)")
+                    }
+                }
+                
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = message
+                )
+            }
+            
+            override fun onColorAnalysisError(error: String) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Color analysis failed: $error"
+                )
+            }
+            
+            override fun onColorAnalysisProgress(message: String) {
+                // Update progress if needed
+                // For now, we'll just keep the loading state
+            }
+        })
+    }
+    
     
     private fun isAccessibilityServiceEnabled(): Boolean {
         val enabledServices = Settings.Secure.getString(
