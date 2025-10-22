@@ -1,5 +1,24 @@
-# Sample Auto Clicker Command File with Goto and Log Commands
-# Demonstrates labels, goto, conditional jumps, and logging
+# Sample Auto Clicker Command File with Functions, Goto and Log Commands
+# Demonstrates functions, labels, goto, conditional jumps, and logging
+
+# Define a function for clicking at different positions
+fun clickSequence
+    logs Performing click sequence
+    click 500 800
+    delay 500
+    click 300 600
+    delay 500
+    click 700 400
+    delay 500
+    logs Click sequence completed
+endfun
+
+# Define a function for waiting
+fun waitAndLog
+    logs Waiting...
+    delay 2000
+    logs Wait completed
+endfun
 
 # Set initial variables
 set counter 0
@@ -9,10 +28,8 @@ set status retry
 # Start sequence
 log Starting automation sequence
 logs Automation sequence started!
-delay 1000
-click 500 800
-log Initial click performed
-logs First click completed
+call clickSequence
+call waitAndLog
 delay 1000
 
 # Label for retry loop
@@ -52,8 +69,7 @@ endif
 
 # Wait and retry
 log Waiting before retry
-logs Waiting before retry...
-delay 2000
+call waitAndLog
 goto retry_loop
 
 # End sequence label

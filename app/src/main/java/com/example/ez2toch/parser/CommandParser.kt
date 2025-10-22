@@ -52,7 +52,12 @@ object CommandParser {
                         commands.add(repeatCommand)
                         index = newIndex
                     }
-                    line.content == "end" || line.content == "endif" || line.content == "endwhile" || line.content == "endrepeat" -> {
+                    line.content.startsWith("fun ") -> {
+                        val (funCommand, newIndex) = parseFunctionStatement(lines, index, labels)
+                        commands.add(funCommand)
+                        index = newIndex
+                    }
+                    line.content == "end" || line.content == "endif" || line.content == "endwhile" || line.content == "endrepeat" || line.content == "endfun" -> {
                         // End of block, return current position
                         break
                     }
@@ -127,6 +132,26 @@ object CommandParser {
         index = newIndex
         
         return Pair(Command.Repeat(count, commands), index)
+    }
+    
+    private fun parseFunctionStatement(lines: List<ParsedLine>, startIndex: Int, labels: Map<String, Int> = emptyMap()): Pair<Command.FunctionDef, Int> {
+        val funLine = lines[startIndex]
+        val parts = funLine.content.split("\\s+".toRegex())
+        
+        if (parts.size != 2) {
+            throw IllegalArgumentException("Function definition requires name")
+        }
+        
+        val functionName = parts[1]
+        
+        var index = startIndex + 1
+        val commands = mutableListOf<Command>()
+        
+        val (funBlock, newIndex) = parseCommandBlock(lines, index, labels)
+        commands.addAll(funBlock)
+        index = newIndex
+        
+        return Pair(Command.FunctionDef(functionName, commands), index)
     }
     
     private fun parseLine(line: String, labels: Map<String, Int> = emptyMap()): Command {
@@ -245,6 +270,18 @@ object CommandParser {
                 if (parts.size < 2) throw IllegalArgumentException("Logs requires a message")
                 val message = parts.drop(1).joinToString(" ")
                 Command.Logs(message)
+            }
+            
+            "fun" -> {
+                if (parts.size != 2) throw IllegalArgumentException("Function definition requires name")
+                val functionName = parts[1]
+                Command.FunctionDef(functionName, emptyList()) // Commands will be filled during block parsing
+            }
+            
+            "call" -> {
+                if (parts.size != 2) throw IllegalArgumentException("Function call requires name")
+                val functionName = parts[1]
+                Command.FunctionCall(functionName)
             }
             
             else -> {

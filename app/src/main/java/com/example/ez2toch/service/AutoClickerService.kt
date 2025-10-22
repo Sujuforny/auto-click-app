@@ -61,6 +61,7 @@ class AutoClickerService : AccessibilityService() {
         fun executeCommandFile(filePath: String) {
             instance?.executeCommandFile(filePath)
         }
+        fun checkRoot(): Boolean = instance?.checkRoot() ?: false
     }
     
     private var isClicking = false
@@ -97,6 +98,8 @@ class AutoClickerService : AccessibilityService() {
     }
     
     fun startAutoClick(x: Int, y: Int, intervalMs: Long) {
+        var isRoot = checkRoot();
+        Log.d(TAG, "========= ${isRoot}===")
         if (isClicking) {
             stopAutoClick()
         }
@@ -375,6 +378,22 @@ class AutoClickerService : AccessibilityService() {
                     // Display message on screen for 3 seconds
                     showScreenMessage(command.message)
                 }
+                
+                is Command.FunctionDef -> {
+                    Log.i(TAG, "FUNCTION DEF: ${command.name}")
+                    context.setFunction(command.name, command.commands)
+                }
+                
+                is Command.FunctionCall -> {
+                    Log.i(TAG, "FUNCTION CALL: ${command.name}")
+                    val functionCommands = context.getFunction(command.name)
+                    if (functionCommands != null) {
+                        // Execute function commands recursively
+                        executeCommandSequence(functionCommands, context)
+                    } else {
+                        Log.e(TAG, "Function '${command.name}' not found")
+                    }
+                }
             }
             
             index++
@@ -505,7 +524,7 @@ class AutoClickerService : AccessibilityService() {
         messageOverlay = null
     }
 
-    private fun checkRoot(): Boolean {
+    fun checkRoot(): Boolean {
         val buildTags = Build.TAGS
         return buildTags != null && buildTags.contains("test-keys")
     }

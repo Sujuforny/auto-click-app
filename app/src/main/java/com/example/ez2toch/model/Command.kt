@@ -29,6 +29,10 @@ sealed class Command {
     data class Log(val message: String) : Command()
     data class LogVariable(val variableName: String) : Command()
     data class Logs(val message: String) : Command() // Display text on screen for 3 seconds
+    
+    // Function commands
+    data class FunctionDef(val name: String, val commands: List<Command>) : Command()
+    data class FunctionCall(val name: String) : Command()
 }
 
 data class CommandSequence(
@@ -40,7 +44,8 @@ data class CommandSequence(
 data class ExecutionContext(
     val variables: MutableMap<String, String> = mutableMapOf(),
     val loopCounters: MutableMap<String, Int> = mutableMapOf(),
-    val labels: MutableMap<String, Int> = mutableMapOf()
+    val labels: MutableMap<String, Int> = mutableMapOf(),
+    val functions: MutableMap<String, List<Command>> = mutableMapOf()
 ) {
     fun setVariable(name: String, value: String) {
         variables[name] = value
@@ -66,4 +71,12 @@ data class ExecutionContext(
     }
     
     fun getLabelIndex(name: String): Int? = labels[name]
+    
+    fun setFunction(name: String, commands: List<Command>) {
+        functions[name] = commands
+    }
+    
+    fun getFunction(name: String): List<Command>? = functions[name]
+    
+    fun hasFunction(name: String): Boolean = functions.containsKey(name)
 }

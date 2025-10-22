@@ -11,6 +11,7 @@ A powerful Android automation tool that allows you to create complex click seque
 - [Conditional Commands](#conditional-commands)
 - [Variable Commands](#variable-commands)
 - [Flow Control Commands](#flow-control-commands)
+- [Function Commands](#function-commands)
 - [Debug and Logging Commands](#debug-and-logging-commands)
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
@@ -185,6 +186,47 @@ gotoif $counter >= 5 end_sequence
 gotoif $status == success final_click
 ```
 
+## Function Commands
+
+### Function Definition
+```bash
+# Define a function
+fun clickSequence
+    logs Performing click sequence
+    click 500 800
+    delay 500
+    click 300 600
+    delay 500
+    logs Click sequence completed
+endfun
+
+# Define a function for waiting
+fun waitAndLog
+    logs Waiting...
+    delay 2000
+    logs Wait completed
+endfun
+```
+
+### Function Calls
+```bash
+# Call a function
+call clickSequence
+call waitAndLog
+
+# Call functions in conditional blocks
+if $counter == 1
+    call clickSequence
+    delay 1000
+endif
+```
+
+### Function Features
+- **Code Reuse**: Define common sequences once and call them multiple times
+- **Organization**: Break complex automation into manageable functions
+- **Nested Calls**: Functions can call other functions
+- **Variable Access**: Functions can access and modify global variables
+
 ## Debug and Logging Commands
 
 ### Log Commands
@@ -282,6 +324,33 @@ logs All clicks completed
 stop
 ```
 
+### Function-Based Automation
+```bash
+# Define reusable functions
+fun loginSequence
+    logs Starting login sequence
+    click 500 800
+    delay 1000
+    click 300 600
+    delay 1000
+    logs Login sequence completed
+endfun
+
+fun waitAndRetry
+    logs Waiting before retry
+    delay 2000
+    logs Retry ready
+endfun
+
+# Main automation using functions
+logs Starting automation
+call loginSequence
+call waitAndRetry
+call loginSequence
+logs Automation completed
+stop
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -297,9 +366,14 @@ stop
 - Check variable names for typos
 
 #### Loop Problems
-- Ensure `endif`, `endwhile`, `endrepeat` close blocks
+- Ensure `endif`, `endwhile`, `endrepeat`, `endfun` close blocks
 - Check loop conditions for infinite loops
 - Use `stop` command to end sequences
+
+#### Function Issues
+- Functions must be defined before they are called
+- Use `endfun` to properly close function definitions
+- Check function names for typos in calls
 
 #### Overlay Permission Issues
 - Grant overlay permission in app settings
@@ -340,6 +414,8 @@ stop
 | "Requires parameter" | Missing required parameter | Add missing parameter |
 | "Variable not found" | Using undefined variable | Set variable before use |
 | "Label not found" | Referencing non-existent label | Create label before goto |
+| "Function not found" | Calling undefined function | Define function before call |
+| "Function definition requires name" | Missing function name | Add function name after 'fun' |
 
 ### Best Practices
 
@@ -350,6 +426,9 @@ stop
 5. **Handle Errors**: Use conditional logic to handle edge cases
 6. **Set Timeouts**: Use delays to prevent rapid execution
 7. **Clean Up**: Always end sequences with `stop`
+8. **Use Functions**: Break complex automation into reusable functions
+9. **Organize Code**: Group related commands into functions
+10. **Test Functions**: Test functions individually before using in main sequence
 
 ### Performance Tips
 

@@ -262,6 +262,20 @@ fun AutoClickerApp(
                         }
                     }
                     
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Button(
+                        onClick = {
+                            ScreenshotActivity.start(context)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("📸 Open Screenshot Tool")
+                    }
+                    
                     if (uiState.isClicking) {
                         Text(
                             text = if (uiState.hasOverlayPermission) 
@@ -396,7 +410,7 @@ fun AutoClickerApp(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp),
-                        placeholder = { Text("Enter commands here...\nExample:\nlogs Hello World\nclick 500 800\ndelay 1000") },
+                        placeholder = { Text("Enter commands here...\nExample:\nfun testFunction\n    logs Function called\n    click 500 800\nendfun\ncall testFunction") },
                         maxLines = 10
                     )
                     
@@ -562,6 +576,26 @@ fun AutoClickerApp(
                     )
                     Text(
                         text = "• logs message - Display message overlay on screen for 3 seconds",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Function Commands:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = "• fun name - Define a function",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• call name - Call a function",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• endfun - End function definition",
                         style = MaterialTheme.typography.bodySmall
                     )
                     
