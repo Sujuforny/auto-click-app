@@ -25,6 +25,9 @@ import com.example.ez2toch.service.ColorAnalysisCallback
 import com.example.ez2toch.service.ColorAnalysisData
 import com.example.ez2toch.service.PixelColorCallback
 import com.example.ez2toch.service.PixelColorData
+import com.example.ez2toch.service.OpenCVService
+import com.example.ez2toch.service.ImageDetectionCallback
+import com.example.ez2toch.service.ImageDetectionData
 import com.example.ez2toch.ui.theme.Ez2tochTheme
 import com.example.ez2toch.viewmodel.AutoClickerViewModel
 
@@ -58,6 +61,9 @@ fun ScreenshotScreen() {
     // Pixel color coordinate inputs
     var xCoordinate by remember { mutableStateOf("") }
     var yCoordinate by remember { mutableStateOf("") }
+    
+    // OpenCV template image path input
+    var templateImagePath by remember { mutableStateOf("") }
     
     Scaffold(
         topBar = {
@@ -417,6 +423,126 @@ fun ScreenshotScreen() {
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("📸 Check + Save")
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "OpenCV Image Detection (Professional)",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    OutlinedTextField(
+                        value = templateImagePath,
+                        onValueChange = { templateImagePath = it },
+                        label = { Text("Template Image Path") },
+                        placeholder = { Text("e.g., /sdcard/Download/button.png") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading
+                    )
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                if (templateImagePath.isBlank()) {
+                                    errorMessage = "Please enter a template image path"
+                                    return@Button
+                                }
+                                
+                                isLoading = true
+                                errorMessage = null
+                                successMessage = null
+                                
+                                OpenCVService.getInstance().findImagePosition(context, templateImagePath, false, object : ImageDetectionCallback {
+                                    override fun onImageDetectionSuccess(detectionData: ImageDetectionData) {
+                                        isLoading = false
+                                        val message = buildString {
+                                            append("🔍 Image Detection Result:\n\n")
+                                            append("Template: ${detectionData.templatePath}\n")
+                                            append("Found: ${if (detectionData.found) "✅ YES" else "❌ NO"}\n")
+                                            if (detectionData.found) {
+                                                append("Position: (${detectionData.x}, ${detectionData.y})\n")
+                                                append("Confidence: ${(detectionData.confidence * 100).toInt()}%\n")
+                                                append("Template Size: ${detectionData.templateWidth}x${detectionData.templateHeight}\n")
+                                            }
+                                            append("\nScreenshot not saved (detection only)")
+                                        }
+                                        successMessage = message
+                                    }
+                                    
+                                    override fun onImageDetectionError(error: String) {
+                                        isLoading = false
+                                        errorMessage = "Image detection failed: $error"
+                                    }
+                                    
+                                    override fun onImageDetectionProgress(message: String) {
+                                        // Progress updates
+                                    }
+                                })
+                            },
+                            enabled = !isLoading && ScreenshotService.getInstance().isRootAvailable() && 
+                                    templateImagePath.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("🔍 Find Image")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                if (templateImagePath.isBlank()) {
+                                    errorMessage = "Please enter a template image path"
+                                    return@Button
+                                }
+                                
+                                isLoading = true
+                                errorMessage = null
+                                successMessage = null
+                                
+                                OpenCVService.getInstance().findImagePosition(context, templateImagePath, true, object : ImageDetectionCallback {
+                                    override fun onImageDetectionSuccess(detectionData: ImageDetectionData) {
+                                        isLoading = false
+                                        val message = buildString {
+                                            append("🔍 Image Detection Result:\n\n")
+                                            append("Template: ${detectionData.templatePath}\n")
+                                            append("Found: ${if (detectionData.found) "✅ YES" else "❌ NO"}\n")
+                                            if (detectionData.found) {
+                                                append("Position: (${detectionData.x}, ${detectionData.y})\n")
+                                                append("Confidence: ${(detectionData.confidence * 100).toInt()}%\n")
+                                                append("Template Size: ${detectionData.templateWidth}x${detectionData.templateHeight}\n")
+                                            }
+                                            if (detectionData.filename != null) {
+                                                append("\nScreenshot saved: ${detectionData.filename}")
+                                            }
+                                        }
+                                        successMessage = message
+                                    }
+                                    
+                                    override fun onImageDetectionError(error: String) {
+                                        isLoading = false
+                                        errorMessage = "Image detection failed: $error"
+                                    }
+                                    
+                                    override fun onImageDetectionProgress(message: String) {
+                                        // Progress updates
+                                    }
+                                })
+                            },
+                            enabled = !isLoading && ScreenshotService.getInstance().isRootAvailable() && 
+                                    templateImagePath.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("📸 Find + Save")
                         }
                     }
                     

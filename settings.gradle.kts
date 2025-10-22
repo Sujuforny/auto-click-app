@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ez2toch"
 include(":app")
+include(":openCV")

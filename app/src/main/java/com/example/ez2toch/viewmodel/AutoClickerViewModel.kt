@@ -14,6 +14,9 @@ import com.example.ez2toch.service.ColorAnalysisCallback
 import com.example.ez2toch.service.ColorAnalysisData
 import com.example.ez2toch.service.PixelColorCallback
 import com.example.ez2toch.service.PixelColorData
+import com.example.ez2toch.service.OpenCVService
+import com.example.ez2toch.service.ImageDetectionCallback
+import com.example.ez2toch.service.ImageDetectionData
 import com.example.ez2toch.data.AutoClickerUiState
 import com.example.ez2toch.data.ClickSettings
 import kotlinx.coroutines.delay
@@ -308,6 +311,47 @@ class AutoClickerViewModel(application: Application) : AndroidViewModel(applicat
             }
             
             override fun onColorAnalysisProgress(message: String) {
+                // Update progress if needed
+                // For now, we'll just keep the loading state
+            }
+        })
+    }
+    
+    fun findImagePosition(templatePath: String, saveScreenshot: Boolean) {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        
+        OpenCVService.getInstance().findImagePosition(context, templatePath, saveScreenshot, object : ImageDetectionCallback {
+            override fun onImageDetectionSuccess(detectionData: ImageDetectionData) {
+                val message = buildString {
+                    append("🔍 Image Detection Result:\n\n")
+                    append("Template: ${detectionData.templatePath}\n")
+                    append("Found: ${if (detectionData.found) "✅ YES" else "❌ NO"}\n")
+                    if (detectionData.found) {
+                        append("Position: (${detectionData.x}, ${detectionData.y})\n")
+                        append("Confidence: ${(detectionData.confidence * 100).toInt()}%\n")
+                        append("Template Size: ${detectionData.templateWidth}x${detectionData.templateHeight}\n")
+                    }
+                    if (detectionData.screenshotSaved && detectionData.filename != null) {
+                        append("\nScreenshot saved: ${detectionData.filename}")
+                    } else {
+                        append("\nScreenshot not saved (detection only)")
+                    }
+                }
+                
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = message
+                )
+            }
+            
+            override fun onImageDetectionError(error: String) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Image detection failed: $error"
+                )
+            }
+            
+            override fun onImageDetectionProgress(message: String) {
                 // Update progress if needed
                 // For now, we'll just keep the loading state
             }
