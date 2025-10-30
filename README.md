@@ -12,6 +12,7 @@ A powerful Android automation tool that allows you to create complex click seque
 - [Variable Commands](#variable-commands)
 - [Flow Control Commands](#flow-control-commands)
 - [Function Commands](#function-commands)
+- [Image Detection Commands](#image-detection-commands)
 - [Debug and Logging Commands](#debug-and-logging-commands)
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
@@ -23,6 +24,7 @@ The Auto Clicker uses a text-based command file system that allows you to:
 - Use conditional logic (if, while, repeat)
 - Manage variables and counters
 - Control program flow with labels and goto
+- Detect images on screen using OpenCV
 - Display messages and debug information
 
 ## Getting Started
@@ -227,6 +229,68 @@ endif
 - **Nested Calls**: Functions can call other functions
 - **Variable Access**: Functions can access and modify global variables
 
+## Image Detection Commands
+
+### Find Image Position
+```bash
+# Basic image detection
+findImagePosition /sdcard/Download/btn.png buttonX buttonY
+
+# With confidence score
+findImagePosition /sdcard/Download/btn.png buttonX buttonY buttonConfidence
+```
+
+### Image Detection Features
+- **OpenCV Integration**: Uses professional computer vision for accurate image detection
+- **Multiple File Formats**: Supports PNG, JPG, and other common image formats
+- **Flexible Paths**: Works with various file path formats
+- **Confidence Scoring**: Optional confidence score for detection quality
+- **Variable Storage**: Stores results in variables for conditional logic
+
+### Image Detection Usage
+```bash
+# Find button and click if found
+findImagePosition /sdcard/Download/btn.png targetX targetY
+if $targetX != -1
+    logs Button found! Clicking at position
+    click $targetX $targetY
+    delay 500
+else
+    logs Button not found, using fallback
+    click 500 800
+endif
+
+# Use confidence score for better detection
+findImagePosition /sdcard/Download/icon.png iconX iconY confidence
+if $confidence > 0.8
+    logs High confidence detection
+    click $iconX $iconY
+else
+    logs Low confidence, skipping
+endif
+```
+
+### Image Detection Variables
+- **X Coordinate**: Position X coordinate of detected image center
+- **Y Coordinate**: Position Y coordinate of detected image center  
+- **Confidence**: Detection confidence score (0.0 to 1.0)
+- **Not Found**: Variables set to -1 if image not detected
+
+### Supported File Paths
+```bash
+# Different path formats
+findImagePosition /sdcard/Download/btn.png x y
+findImagePosition /storage/emulated/0/Download/btn.png x y
+findImagePosition btn.png x y  # Uses filename only
+```
+
+### Image Detection Best Practices
+- **Template Quality**: Use clear, high-contrast template images
+- **Size Considerations**: Template should be large enough for reliable detection
+- **Screen Resolution**: Test on target device resolution
+- **Confidence Thresholds**: Use confidence scores for reliable detection
+- **Fallback Logic**: Always provide fallback actions when image not found
+
 ## Debug and Logging Commands
 
 ### Log Commands
@@ -351,6 +415,43 @@ logs Automation completed
 stop
 ```
 
+### Image Detection Automation
+```bash
+# Define function for image-based clicking
+fun findButtonAndClick
+    logs Looking for button image...
+    findImagePosition /sdcard/Download/btn.png buttonX buttonY buttonConfidence
+    logvar buttonX
+    logvar buttonY
+    logvar buttonConfidence
+    
+    # Check if image was found with good confidence
+    if $buttonX != -1
+        if $buttonConfidence > 0.7
+            logs Button found with high confidence! Clicking
+            click $buttonX $buttonY
+            delay 500
+        else
+            logs Button found but low confidence, using fallback
+            click 500 800
+            delay 500
+        endif
+    else
+        logs Button not found, using fallback position
+        click 500 800
+        delay 500
+    endif
+endfun
+
+# Main automation with image detection
+logs Starting image detection automation
+call findButtonAndClick
+delay 1000
+call findButtonAndClick
+logs Image detection automation completed
+stop
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -378,6 +479,14 @@ stop
 #### Overlay Permission Issues
 - Grant overlay permission in app settings
 - Restart the app after granting permissions
+
+#### Image Detection Issues
+- Ensure template image file exists and is accessible
+- Check file permissions for Downloads folder access
+- Verify template image is clear and high contrast
+- Test with different template image sizes
+- Use confidence scores to validate detection quality
+- Provide fallback actions when image not found
 
 ### Debug Tips
 

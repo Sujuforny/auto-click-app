@@ -284,6 +284,15 @@ object CommandParser {
                 Command.FunctionCall(functionName)
             }
             
+            "findimageposition", "find_image_position" -> {
+                if (parts.size < 4) throw IllegalArgumentException("FindImagePosition requires template path, x variable, and y variable")
+                val templatePath = parts[1]
+                val xVariable = parts[2]
+                val yVariable = parts[3]
+                val confidenceVariable = if (parts.size > 4) parts[4] else null
+                Command.FindImagePosition(templatePath, xVariable, yVariable, confidenceVariable)
+            }
+            
             else -> {
                 throw IllegalArgumentException("Unknown command: $commandType")
             }
@@ -351,32 +360,32 @@ object CommandParser {
                 condition.contains(">") -> {
                     val parts = condition.split(">").map { it.trim() }
                     if (parts.size == 2) {
-                        val left = resolveVariable(parts[0], context).toIntOrNull() ?: 0
-                        val right = resolveVariable(parts[1], context).toIntOrNull() ?: 0
+                        val left = resolveVariable(parts[0], context).toDoubleOrNull() ?: 0.0
+                        val right = resolveVariable(parts[1], context).toDoubleOrNull() ?: 0.0
                         left > right
                     } else false
                 }
                 condition.contains("<") -> {
                     val parts = condition.split("<").map { it.trim() }
                     if (parts.size == 2) {
-                        val left = resolveVariable(parts[0], context).toIntOrNull() ?: 0
-                        val right = resolveVariable(parts[1], context).toIntOrNull() ?: 0
+                        val left = resolveVariable(parts[0], context).toDoubleOrNull() ?: 0.0
+                        val right = resolveVariable(parts[1], context).toDoubleOrNull() ?: 0.0
                         left < right
                     } else false
                 }
                 condition.contains(">=") -> {
                     val parts = condition.split(">=").map { it.trim() }
                     if (parts.size == 2) {
-                        val left = resolveVariable(parts[0], context).toIntOrNull() ?: 0
-                        val right = resolveVariable(parts[1], context).toIntOrNull() ?: 0
+                        val left = resolveVariable(parts[0], context).toDoubleOrNull() ?: 0.0
+                        val right = resolveVariable(parts[1], context).toDoubleOrNull() ?: 0.0
                         left >= right
                     } else false
                 }
                 condition.contains("<=") -> {
                     val parts = condition.split("<=").map { it.trim() }
                     if (parts.size == 2) {
-                        val left = resolveVariable(parts[0], context).toIntOrNull() ?: 0
-                        val right = resolveVariable(parts[1], context).toIntOrNull() ?: 0
+                        val left = resolveVariable(parts[0], context).toDoubleOrNull() ?: 0.0
+                        val right = resolveVariable(parts[1], context).toDoubleOrNull() ?: 0.0
                         left <= right
                     } else false
                 }

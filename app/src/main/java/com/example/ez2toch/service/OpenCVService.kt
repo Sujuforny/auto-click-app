@@ -646,21 +646,34 @@ class OpenCVService private constructor() {
      * Save screenshot to Downloads folder
      */
     private fun saveScreenshotToDownloads(bitmap: Bitmap, context: Context): String {
-        val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
-            .format(java.util.Date())
-        val filename = "screenshot_$timestamp.png"
-        
-        val downloadsDir = File(context.getExternalFilesDir(null), "Downloads")
-        if (!downloadsDir.exists()) {
-            downloadsDir.mkdirs()
+        return try {
+            // Create filename with timestamp
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
+                .format(java.util.Date())
+            val filename = "screenshot_$timestamp.png"
+            
+            // Get Downloads directory (system Downloads folder)
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS
+            )
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs()
+            }
+            
+            val file = File(downloadsDir, filename)
+            
+            // Save bitmap to file
+            java.io.FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            
+            Log.d(TAG, "Screenshot saved to Downloads: $filename")
+            filename
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save screenshot: ${e.message}", e)
+            "screenshot_error_${System.currentTimeMillis()}.png"
         }
-        
-        val file = File(downloadsDir, filename)
-        val outputStream = java.io.FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-        outputStream.close()
-        
-        return filename
     }
     
     /**

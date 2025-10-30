@@ -135,7 +135,7 @@ class AutoClickerService : AccessibilityService() {
         try {
             val path = Path()
             path.moveTo(x.toFloat(), y.toFloat())
-            
+            Log.d(TAG, "Clicking at ($x, $y)")
             val gestureBuilder = GestureDescription.Builder()
             gestureBuilder.addStroke(GestureDescription.StrokeDescription(path, 0, 100))
             
@@ -394,9 +394,89 @@ class AutoClickerService : AccessibilityService() {
                         Log.e(TAG, "Function '${command.name}' not found")
                     }
                 }
+                
+                is Command.FindImagePosition -> {
+                    Log.i(TAG, "FIND IMAGE POSITION: ${command.templatePath}")
+                    executeFindImagePosition(command, context)
+                }
             }
             
             index++
+        }
+    }
+    
+    private suspend fun executeFindImagePosition(command: Command.FindImagePosition, context: ExecutionContext) {
+        try {
+            val openCVService = OpenCVService.getInstance()
+            
+            // Use coroutine scope to handle the async operation
+            val detectionResult = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                var result: com.example.ez2toch.service.ImageDetectionData? = null
+                val latch = java.util.concurrent.CountDownLatch(1)
+                
+                openCVService.findImagePosition(
+                    this@AutoClickerService,
+                    command.templatePath,
+                    false, // Don't save screenshot by default
+                    object : com.example.ez2toch.service.ImageDetectionCallback {
+                        override fun onImageDetectionSuccess(detectionData: com.example.ez2toch.service.ImageDetectionData) {
+                            result = detectionData
+                            latch.countDown()
+                        }
+                        
+                        override fun onImageDetectionError(error: String) {
+                            Log.e(TAG, "Image detection error: $error")
+                            latch.countDown()
+                        }
+                        
+                        override fun onImageDetectionProgress(message: String) {
+                            Log.d(TAG, "Image detection progress: $message")
+                        }
+                    }
+                )
+                
+                latch.await()
+                result
+            }
+            
+            if (detectionResult != null) {
+                // Store the results in variables
+                if (detectionResult.found) {
+                    context.setVariable(command.xVariable, detectionResult.x.toString())
+                    context.setVariable(command.yVariable, detectionResult.y.toString())
+                    
+                    if (command.confidenceVariable != null) {
+                        context.setVariable(command.confidenceVariable, detectionResult.confidence.toString())
+                    }
+                    
+                    Log.i(TAG, "Image found at (${detectionResult.x}, ${detectionResult.y}) with confidence ${detectionResult.confidence}")
+                } else {
+                    context.setVariable(command.xVariable, "-1")
+                    context.setVariable(command.yVariable, "-1")
+                    
+                    if (command.confidenceVariable != null) {
+                        context.setVariable(command.confidenceVariable, "0.0")
+                    }
+                    
+                    Log.i(TAG, "Image not found in screenshot")
+                }
+            } else {
+                Log.e(TAG, "Image detection failed - no result received")
+                context.setVariable(command.xVariable, "-1")
+                context.setVariable(command.yVariable, "-1")
+                
+                if (command.confidenceVariable != null) {
+                    context.setVariable(command.confidenceVariable, "0.0")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error executing FindImagePosition: ${e.message}", e)
+            context.setVariable(command.xVariable, "-1")
+            context.setVariable(command.yVariable, "-1")
+            
+            if (command.confidenceVariable != null) {
+                context.setVariable(command.confidenceVariable, "0.0")
+            }
         }
     }
     

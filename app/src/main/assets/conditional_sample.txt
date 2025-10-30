@@ -1,5 +1,5 @@
-# Sample Auto Clicker Command File with Functions, Goto and Log Commands
-# Demonstrates functions, labels, goto, conditional jumps, and logging
+# Sample Auto Clicker Command File with Functions, Goto, Log Commands, and Image Detection
+# Demonstrates functions, labels, goto, conditional jumps, logging, and image detection
 
 # Define a function for clicking at different positions
 fun clickSequence
@@ -20,6 +20,26 @@ fun waitAndLog
     logs Wait completed
 endfun
 
+# Define a function for image detection
+fun findButtonAndClick
+    logs Looking for button image...
+    findImagePosition /sdcard/Download/btn.png buttonX buttonY buttonConfidence
+    logvar buttonX
+    logvar buttonY
+    logvar buttonConfidence
+    
+    # Check if image was found
+    if $buttonX != -1
+        logs Button found! Clicking at position
+        click $buttonX $buttonY
+        delay 500
+    else
+        logs Button not found, using fallback position
+        click 500 800
+        delay 500
+    endif
+endfun
+
 # Set initial variables
 set counter 0
 set max_attempts 5
@@ -28,6 +48,12 @@ set status retry
 # Start sequence
 log Starting automation sequence
 logs Automation sequence started!
+
+# Try image detection first
+call findButtonAndClick
+delay 1000
+
+# Continue with regular sequence
 call clickSequence
 call waitAndLog
 delay 1000
@@ -57,6 +83,20 @@ endif
 if $counter == 3
     log Performing third attempt click
     click 600 500
+    delay 500
+endif
+
+# Try image detection on attempt 4
+if $counter == 4
+    log Attempting image detection on fourth try
+    findImagePosition /sdcard/Download/btn.png targetX targetY
+    if $targetX != -1
+        logs Image found! Clicking detected position
+        click $targetX $targetY
+    else
+        logs Image not found, using default position
+        click 500 500
+    endif
     delay 500
 endif
 

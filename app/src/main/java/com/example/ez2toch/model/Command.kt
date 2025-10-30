@@ -33,6 +33,9 @@ sealed class Command {
     // Function commands
     data class FunctionDef(val name: String, val commands: List<Command>) : Command()
     data class FunctionCall(val name: String) : Command()
+    
+    // Image detection command
+    data class FindImagePosition(val templatePath: String, val xVariable: String, val yVariable: String, val confidenceVariable: String? = null) : Command()
 }
 
 data class CommandSequence(
