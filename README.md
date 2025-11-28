@@ -2,6 +2,12 @@
 
 A powerful Android automation tool that allows you to create complex click sequences using simple text-based command files.
 
+## Download
+
+📱 **[Download Latest APK](https://github.com/Sujuforny/auto-click-app/releases/latest/download/app-debug.apk)**
+
+Get the latest version of the Auto Clicker app and start automating your Android tasks today!
+
 ## Table of Contents
 
 - [Overview](#overview)
