@@ -76,8 +76,15 @@ threefingertap 300 400
 # Long press (duration in milliseconds)
 longpress 400 500 2000
 
+
 # Swipe from one point to another
 swipe 100 200 500 600 1000
+
+# Zoom in (spread gesture - x, y, distance, duration)
+zoomin 500 800 400 1000
+
+# Zoom out (pinch gesture - x, y, distance, duration)
+zoomout 500 800 400 1000
 ```
 
 ### Timing Commands

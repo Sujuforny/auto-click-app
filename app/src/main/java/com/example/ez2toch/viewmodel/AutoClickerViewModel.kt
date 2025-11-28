@@ -199,11 +199,11 @@ class AutoClickerViewModel(application: Application) : AndroidViewModel(applicat
     fun createConditionalSampleFile(): String {
         return try {
             // Read from assets
-            val inputStream = context.assets.open("conditional_sample.txt")
+            val inputStream = context.assets.open("my_simple.txt")
             val content = inputStream.bufferedReader().use { it.readText() }
             
             // Write to internal storage
-            val file = File(context.filesDir, "conditional_sample.txt")
+            val file = File(context.filesDir, "my_simple.txt")
             FileWriter(file).use { writer ->
                 writer.write(content)
             }

@@ -1,0 +1,4 @@
+/Users/vtech/Library/Android/sdk/cmake/3.22.1/bin/ninja \
+  -C \
+  /Users/vtech/Documents/personal/android/ez2toch/openCV/.cxx/Debug/1d3b1a3w/x86 \
+  opencv_jni_shared

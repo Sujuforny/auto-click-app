@@ -1,17 +1,18 @@
 package com.example.ez2toch.parser
 
+import android.util.Log
 import com.example.ez2toch.model.Command
 import com.example.ez2toch.model.ExecutionContext
-import android.util.Log
 
 object CommandParser {
     private const val TAG = "CommandParser"
-    
+
     fun parseCommands(content: String): List<Command> {
-        val lines = content.lines().mapIndexed { index, line -> 
-            ParsedLine(index + 1, line.trim()) 
-        }.filter { it.content.isNotEmpty() && !it.content.startsWith("#") }
-        
+        val lines =
+                content.lines()
+                        .mapIndexed { index, line -> ParsedLine(index + 1, line.trim()) }
+                        .filter { it.content.isNotEmpty() && !it.content.startsWith("#") }
+
         // First pass: collect all labels
         val labels = mutableMapOf<String, Int>()
         lines.forEachIndexed { index, line ->
@@ -20,21 +21,25 @@ object CommandParser {
                 labels[labelName] = index
             }
         }
-        
+
         // Second pass: parse commands with label information
         val commands = parseCommandBlock(lines, 0, labels).first
         return commands
     }
-    
+
     private data class ParsedLine(val lineNumber: Int, val content: String)
-    
-    private fun parseCommandBlock(lines: List<ParsedLine>, startIndex: Int, labels: Map<String, Int> = emptyMap()): Pair<List<Command>, Int> {
+
+    private fun parseCommandBlock(
+            lines: List<ParsedLine>,
+            startIndex: Int,
+            labels: Map<String, Int> = emptyMap()
+    ): Pair<List<Command>, Int> {
         val commands = mutableListOf<Command>()
         var index = startIndex
-        
+
         while (index < lines.size) {
             val line = lines[index]
-            
+
             try {
                 when {
                     line.content.startsWith("if ") -> {
@@ -57,7 +62,11 @@ object CommandParser {
                         commands.add(funCommand)
                         index = newIndex
                     }
-                    line.content == "end" || line.content == "endif" || line.content == "endwhile" || line.content == "endrepeat" || line.content == "endfun" -> {
+                    line.content == "end" ||
+                            line.content == "endif" ||
+                            line.content == "endwhile" ||
+                            line.content == "endrepeat" ||
+                            line.content == "endfun" -> {
                         // End of block, return current position
                         break
                     }
@@ -72,23 +81,27 @@ object CommandParser {
                 index++
             }
         }
-        
+
         return Pair(commands, index)
     }
-    
-    private fun parseIfStatement(lines: List<ParsedLine>, startIndex: Int, labels: Map<String, Int> = emptyMap()): Pair<Command.If, Int> {
+
+    private fun parseIfStatement(
+            lines: List<ParsedLine>,
+            startIndex: Int,
+            labels: Map<String, Int> = emptyMap()
+    ): Pair<Command.If, Int> {
         val ifLine = lines[startIndex]
         val condition = ifLine.content.substring(3).trim() // Remove "if "
-        
+
         var index = startIndex + 1
         val thenCommands = mutableListOf<Command>()
         val elseCommands = mutableListOf<Command>()
-        
+
         // Parse then block
         val (thenBlock, newIndex) = parseCommandBlock(lines, index, labels)
         thenCommands.addAll(thenBlock)
         index = newIndex
-        
+
         // Check for else block
         if (index < lines.size && lines[index].content.startsWith("else")) {
             index++ // Skip "else" line
@@ -96,96 +109,133 @@ object CommandParser {
             elseCommands.addAll(elseBlock)
             index = finalIndex
         }
-        
+
+        // Move past the 'endif' line
+        if (index < lines.size && lines[index].content == "endif") {
+            index++
+        }
+
         return Pair(Command.If(condition, thenCommands, elseCommands), index)
     }
-    
-    private fun parseWhileStatement(lines: List<ParsedLine>, startIndex: Int, labels: Map<String, Int> = emptyMap()): Pair<Command.While, Int> {
+
+    private fun parseWhileStatement(
+            lines: List<ParsedLine>,
+            startIndex: Int,
+            labels: Map<String, Int> = emptyMap()
+    ): Pair<Command.While, Int> {
         val whileLine = lines[startIndex]
         val condition = whileLine.content.substring(6).trim() // Remove "while "
-        
+
         var index = startIndex + 1
         val commands = mutableListOf<Command>()
-        
+
         val (whileBlock, newIndex) = parseCommandBlock(lines, index, labels)
         commands.addAll(whileBlock)
         index = newIndex
-        
+
+        // Move past the 'endwhile' line
+        if (index < lines.size && lines[index].content == "endwhile") {
+            index++
+        }
+
         return Pair(Command.While(condition, commands), index)
     }
-    
-    private fun parseRepeatStatement(lines: List<ParsedLine>, startIndex: Int, labels: Map<String, Int> = emptyMap()): Pair<Command.Repeat, Int> {
+
+    private fun parseRepeatStatement(
+            lines: List<ParsedLine>,
+            startIndex: Int,
+            labels: Map<String, Int> = emptyMap()
+    ): Pair<Command.Repeat, Int> {
         val repeatLine = lines[startIndex]
         val parts = repeatLine.content.split("\\s+".toRegex())
-        
+
         if (parts.size != 2) {
             throw IllegalArgumentException("Repeat requires count")
         }
-        
+
         val count = parts[1].toInt()
-        
+
         var index = startIndex + 1
         val commands = mutableListOf<Command>()
-        
+
         val (repeatBlock, newIndex) = parseCommandBlock(lines, index, labels)
         commands.addAll(repeatBlock)
         index = newIndex
-        
+
+        // Move past the 'endrepeat' line
+        if (index < lines.size && lines[index].content == "endrepeat") {
+            index++
+        }
+
         return Pair(Command.Repeat(count, commands), index)
     }
-    
-    private fun parseFunctionStatement(lines: List<ParsedLine>, startIndex: Int, labels: Map<String, Int> = emptyMap()): Pair<Command.FunctionDef, Int> {
+
+    private fun parseFunctionStatement(
+            lines: List<ParsedLine>,
+            startIndex: Int,
+            labels: Map<String, Int> = emptyMap()
+    ): Pair<Command.FunctionDef, Int> {
         val funLine = lines[startIndex]
         val parts = funLine.content.split("\\s+".toRegex())
-        
+
         if (parts.size != 2) {
             throw IllegalArgumentException("Function definition requires name")
         }
-        
+
         val functionName = parts[1]
-        
+
         var index = startIndex + 1
         val commands = mutableListOf<Command>()
-        
+
         val (funBlock, newIndex) = parseCommandBlock(lines, index, labels)
         commands.addAll(funBlock)
         index = newIndex
-        
+
+        // Move past the 'endfun' line
+        if (index < lines.size && lines[index].content == "endfun") {
+            index++
+        }
+
         return Pair(Command.FunctionDef(functionName, commands), index)
     }
-    
+
     private fun parseLine(line: String, labels: Map<String, Int> = emptyMap()): Command {
         val parts = line.split("\\s+".toRegex()).filter { it.isNotEmpty() }
-        
+
         if (parts.isEmpty()) {
             throw IllegalArgumentException("Empty command")
         }
-        
+
         val commandType = parts[0].lowercase()
-        
+
         return when (commandType) {
             "click" -> {
-                if (parts.size != 3) throw IllegalArgumentException("Click requires x and y coordinates")
+                if (parts.size != 3)
+                        throw IllegalArgumentException("Click requires x and y coordinates")
                 val x = parts[1].toInt()
                 val y = parts[2].toInt()
                 Command.Click(x, y)
             }
-            
             "delay" -> {
-                if (parts.size != 2) throw IllegalArgumentException("Delay requires duration in milliseconds")
+                if (parts.size != 2)
+                        throw IllegalArgumentException("Delay requires duration in milliseconds")
                 val duration = parts[1].toLong()
                 Command.Delay(duration)
             }
-            
             "threefingertap", "three_finger_tap" -> {
-                if (parts.size != 3) throw IllegalArgumentException("ThreeFingerTap requires x and y coordinates")
+                if (parts.size != 3)
+                        throw IllegalArgumentException(
+                                "ThreeFingerTap requires x and y coordinates"
+                        )
                 val x = parts[1].toInt()
                 val y = parts[2].toInt()
                 Command.ThreeFingerTap(x, y)
             }
-            
             "swipe" -> {
-                if (parts.size != 6) throw IllegalArgumentException("Swipe requires startX, startY, endX, endY, duration")
+                if (parts.size != 6)
+                        throw IllegalArgumentException(
+                                "Swipe requires startX, startY, endX, endY, duration"
+                        )
                 val startX = parts[1].toInt()
                 val startY = parts[2].toInt()
                 val endX = parts[3].toInt()
@@ -193,115 +243,135 @@ object CommandParser {
                 val duration = parts[5].toLong()
                 Command.Swipe(startX, startY, endX, endY, duration)
             }
-            
             "longpress", "long_press" -> {
-                if (parts.size != 4) throw IllegalArgumentException("LongPress requires x, y, and duration")
+                if (parts.size != 4)
+                        throw IllegalArgumentException("LongPress requires x, y, and duration")
                 val x = parts[1].toInt()
                 val y = parts[2].toInt()
                 val duration = parts[3].toLong()
                 Command.LongPress(x, y, duration)
             }
-            
+            "zoomin", "zoom_in" -> {
+                if (parts.size != 5)
+                        throw IllegalArgumentException(
+                                "ZoomIn requires x, y, distance, and duration"
+                        )
+                val x = parts[1].toInt()
+                val y = parts[2].toInt()
+                val distance = parts[3].toInt()
+                val duration = parts[4].toLong()
+                Command.ZoomIn(x, y, distance, duration)
+            }
+            "zoomout", "zoom_out" -> {
+                if (parts.size != 5)
+                        throw IllegalArgumentException(
+                                "ZoomOut requires x, y, distance, and duration"
+                        )
+                val x = parts[1].toInt()
+                val y = parts[2].toInt()
+                val distance = parts[3].toInt()
+                val duration = parts[4].toLong()
+                Command.ZoomOut(x, y, distance, duration)
+            }
             "stop" -> {
                 Command.Stop
             }
-            
             "set" -> {
-                if (parts.size != 3) throw IllegalArgumentException("Set requires variable name and value")
+                if (parts.size != 3)
+                        throw IllegalArgumentException("Set requires variable name and value")
                 val name = parts[1]
                 val value = parts[2]
                 Command.SetVariable(name, value)
             }
-            
             "get" -> {
                 if (parts.size != 2) throw IllegalArgumentException("Get requires variable name")
                 val name = parts[1]
                 Command.GetVariable(name)
             }
-            
             "checkcolor" -> {
-                if (parts.size != 4) throw IllegalArgumentException("CheckColor requires x, y, and expected color")
+                if (parts.size != 4)
+                        throw IllegalArgumentException(
+                                "CheckColor requires x, y, and expected color"
+                        )
                 val x = parts[1].toInt()
                 val y = parts[2].toInt()
                 val expectedColor = parts[3]
                 Command.CheckColor(x, y, expectedColor)
             }
-            
             "checktext" -> {
-                if (parts.size != 4) throw IllegalArgumentException("CheckText requires x, y, and expected text")
+                if (parts.size != 4)
+                        throw IllegalArgumentException("CheckText requires x, y, and expected text")
                 val x = parts[1].toInt()
                 val y = parts[2].toInt()
                 val expectedText = parts[3]
                 Command.CheckText(x, y, expectedText)
             }
-            
             "label" -> {
                 if (parts.size != 2) throw IllegalArgumentException("Label requires name")
                 val name = parts[1]
                 Command.Label(name)
             }
-            
             "goto" -> {
                 if (parts.size != 2) throw IllegalArgumentException("Goto requires label name")
                 val labelName = parts[1]
                 Command.Goto(labelName)
             }
-            
             "gotoif" -> {
-                if (parts.size != 3) throw IllegalArgumentException("GotoIf requires condition and label name")
+                if (parts.size != 3)
+                        throw IllegalArgumentException("GotoIf requires condition and label name")
                 val condition = parts[1]
                 val labelName = parts[2]
                 Command.GotoIf(condition, labelName)
             }
-            
             "log" -> {
                 if (parts.size < 2) throw IllegalArgumentException("Log requires a message")
                 val message = parts.drop(1).joinToString(" ")
                 Command.Log(message)
             }
-            
             "logvar" -> {
                 if (parts.size != 2) throw IllegalArgumentException("LogVar requires variable name")
                 val variableName = parts[1]
                 Command.LogVariable(variableName)
             }
-            
             "logs" -> {
                 if (parts.size < 2) throw IllegalArgumentException("Logs requires a message")
                 val message = parts.drop(1).joinToString(" ")
                 Command.Logs(message)
             }
-            
             "fun" -> {
-                if (parts.size != 2) throw IllegalArgumentException("Function definition requires name")
+                if (parts.size != 2)
+                        throw IllegalArgumentException("Function definition requires name")
                 val functionName = parts[1]
-                Command.FunctionDef(functionName, emptyList()) // Commands will be filled during block parsing
+                Command.FunctionDef(
+                        functionName,
+                        emptyList()
+                ) // Commands will be filled during block parsing
             }
-            
             "call" -> {
                 if (parts.size != 2) throw IllegalArgumentException("Function call requires name")
                 val functionName = parts[1]
                 Command.FunctionCall(functionName)
             }
-            
             "findimageposition", "find_image_position" -> {
-                if (parts.size < 4) throw IllegalArgumentException("FindImagePosition requires template path, x variable, and y variable")
+                if (parts.size < 4)
+                        throw IllegalArgumentException(
+                                "FindImagePosition requires template path, x variable, and y variable"
+                        )
                 val templatePath = parts[1]
                 val xVariable = parts[2]
                 val yVariable = parts[3]
                 val confidenceVariable = if (parts.size > 4) parts[4] else null
                 Command.FindImagePosition(templatePath, xVariable, yVariable, confidenceVariable)
             }
-            
             else -> {
                 throw IllegalArgumentException("Unknown command: $commandType")
             }
         }
     }
-    
+
     fun validateCommands(commands: List<Command>): List<String> {
         val errors = mutableListOf<String>()
-        
+
         for ((index, command) in commands.withIndex()) {
             when (command) {
                 is Command.Click -> {
@@ -316,13 +386,18 @@ object CommandParser {
                 }
                 is Command.ThreeFingerTap -> {
                     if (command.x < 0 || command.y < 0) {
-                        errors.add("Command ${index + 1}: ThreeFingerTap coordinates must be positive")
+                        errors.add(
+                                "Command ${index + 1}: ThreeFingerTap coordinates must be positive"
+                        )
                     }
                 }
                 is Command.Swipe -> {
-                    if (command.startX < 0 || command.startY < 0 || 
-                        command.endX < 0 || command.endY < 0 || 
-                        command.duration <= 0) {
+                    if (command.startX < 0 ||
+                                    command.startY < 0 ||
+                                    command.endX < 0 ||
+                                    command.endY < 0 ||
+                                    command.duration <= 0
+                    ) {
                         errors.add("Command ${index + 1}: Swipe parameters must be valid")
                     }
                 }
@@ -331,13 +406,33 @@ object CommandParser {
                         errors.add("Command ${index + 1}: LongPress parameters must be valid")
                     }
                 }
-                else -> { /* No validation needed for other commands */ }
+                is Command.ZoomIn -> {
+                    if (command.x < 0 ||
+                                    command.y < 0 ||
+                                    command.distance <= 0 ||
+                                    command.duration <= 0
+                    ) {
+                        errors.add("Command ${index + 1}: ZoomIn parameters must be valid")
+                    }
+                }
+                is Command.ZoomOut -> {
+                    if (command.x < 0 ||
+                                    command.y < 0 ||
+                                    command.distance <= 0 ||
+                                    command.duration <= 0
+                    ) {
+                        errors.add("Command ${index + 1}: ZoomOut parameters must be valid")
+                    }
+                }
+                else -> {
+                    /* No validation needed for other commands */
+                }
             }
         }
-        
+
         return errors
     }
-    
+
     fun evaluateCondition(condition: String, context: ExecutionContext): Boolean {
         return try {
             when {
@@ -400,7 +495,7 @@ object CommandParser {
             false
         }
     }
-    
+
     private fun resolveVariable(value: String, context: ExecutionContext): String {
         return when {
             value.startsWith("$") -> {

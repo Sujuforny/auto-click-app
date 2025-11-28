@@ -1,4 +1,100 @@
-#variable
-set a 1
+# ========= start =========
+delay 3000
+logs start bot
+# 1- open game
+call openGame
 
-log variable $a
+# 2- wait loading to home screen     :label home
+label home
+call waitLoadingToHomeScreen
+
+# 3- zoom out
+call zoomOut
+
+# 4- harvest and dam
+call harvestAndDam
+
+# 5- click on shop
+call clickOnShop
+
+# 6- sell products
+call sellProducts
+
+# 7- change account
+call changeAccount
+
+# 8- goto label home
+goto home
+stop
+
+
+
+# method open game 
+fun openGame
+    click 530 220
+endfun
+
+# method zoom in 
+fun zoomIn
+    zoomin 500 800 400 1000
+endfun
+
+# method zoom out
+fun zoomOut
+    zoomout 500 800 400 1000
+endfun
+
+# method harvest and dam
+fun harvestAndDam
+    click 530 220 # click on harvest and dam
+    delay 2000
+endfun
+
+# method sell products
+fun sellProducts
+    click 530 220 # click on sell products
+    delay 2000
+endfun
+
+# method click on shop
+fun clickOnShop
+    click 530 220 # click on shop
+    delay 2000
+endfun
+# method change account
+fun changeAccount
+    click 530 220 # click on change account
+    delay 2000
+endfun
+# method make UI to current home screen
+fun makeUIToCurrentHomeScreen
+    click 530 220 # click on make UI to current home screen
+    delay 2000
+endfun
+# method wait loading to home screen
+fun waitLoadingToHomeScreen
+    delay 2000
+    findImagePosition /sdcard/Download/loading.png iconX iconY confidence
+    if $confidence > 0.8
+        logs High confidence detection
+    else
+        logs Low confidence, skipping
+        call waitLoadingToHomeScreen
+    endif
+endfun
+
+# method check it is current home screen
+fun checkItIsCurrentHomeScreen
+    delay 2000
+    findImagePosition /sdcard/Download/home.png iconX iconY confidence
+    if $confidence > 0.8
+        logs High confidence detection
+    else
+        logs Low confidence, skipping
+        call checkItIsCurrentHomeScreen
+    endif
+endfun
+
+# ========= check =========
+# method check it is current home screen
+# method check it is current shop screen
