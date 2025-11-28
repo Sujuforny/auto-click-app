@@ -4,7 +4,7 @@ A powerful Android automation tool that allows you to create complex click seque
 
 ## Download
 
-📱 **[Download Latest APK](https://github.com/Sujuforny/auto-click-app/releases/latest/download/app-debug.apk)**
+📱 **[Download Latest APK](https://drive.google.com/file/d/1WTEbdb8sfXjYyJ9ZLUHdHQOczKxsHAiJ/view?usp=sharing)**
 
 Get the latest version of the Auto Clicker app and start automating your Android tasks today!
 
