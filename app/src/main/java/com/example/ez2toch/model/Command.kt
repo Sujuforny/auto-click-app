@@ -14,6 +14,7 @@ sealed class Command {
     data class LongPress(val x: Int, val y: Int, val duration: Long) : Command()
     data class ZoomIn(val x: Int, val y: Int, val distance: Int, val duration: Long) : Command()
     data class ZoomOut(val x: Int, val y: Int, val distance: Int, val duration: Long) : Command()
+    data class ContinuousSwipe(val points: List<Pair<Int, Int>>, val duration: Long) : Command()
     object Stop : Command()
     data class Comment(val text: String) : Command()
 

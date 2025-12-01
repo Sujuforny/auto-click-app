@@ -289,6 +289,10 @@ class AutoClickerService : AccessibilityService() {
                     executeZoomOut(command.x, command.y, command.distance, command.duration)
                     delay(100)
                 }
+                is Command.ContinuousSwipe -> {
+                    executeContinuousSwipe(command.points, command.duration)
+                    delay(100)
+                }
                 is Command.Stop -> {
                     Log.d(TAG, "Stop command received")
                     stopAutoClick()
@@ -644,6 +648,51 @@ class AutoClickerService : AccessibilityService() {
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error performing zoom out: ${e.message}")
+        }
+    }
+
+    private fun executeContinuousSwipe(points: List<Pair<Int, Int>>, duration: Long) {
+        try {
+            if (points.size < 2) {
+                Log.e(TAG, "ContinuousSwipe requires at least 2 points")
+                return
+            }
+
+            // Create a single path that goes through all points
+            val path = Path()
+
+            // Start at the first point
+            val firstPoint = points[0]
+            path.moveTo(firstPoint.first.toFloat(), firstPoint.second.toFloat())
+
+            // Add line segments to each subsequent point
+            for (i in 1 until points.size) {
+                val point = points[i]
+                path.lineTo(point.first.toFloat(), point.second.toFloat())
+            }
+
+            val gestureBuilder = GestureDescription.Builder()
+            gestureBuilder.addStroke(GestureDescription.StrokeDescription(path, 0, duration))
+
+            val gesture = gestureBuilder.build()
+
+            dispatchGesture(
+                    gesture,
+                    object : GestureResultCallback() {
+                        override fun onCompleted(gestureDescription: GestureDescription?) {
+                            super.onCompleted(gestureDescription)
+                            Log.d(TAG, "Continuous swipe completed through ${points.size} points")
+                        }
+
+                        override fun onCancelled(gestureDescription: GestureDescription?) {
+                            super.onCancelled(gestureDescription)
+                            Log.d(TAG, "Continuous swipe cancelled")
+                        }
+                    },
+                    null
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error performing continuous swipe: ${e.message}")
         }
     }
 

@@ -243,6 +243,29 @@ object CommandParser {
                 val duration = parts[5].toLong()
                 Command.Swipe(startX, startY, endX, endY, duration)
             }
+            "continuousswipe", "continuous_swipe" -> {
+                // Minimum: x1 y1 x2 y2 duration = 5 parameters
+                if (parts.size < 5 || (parts.size - 1) % 2 != 0)
+                        throw IllegalArgumentException(
+                                "ContinuousSwipe requires pairs of coordinates (x y) and duration at the end"
+                        )
+
+                // Last parameter is duration
+                val duration = parts.last().toLong()
+
+                // Parse coordinate pairs
+                val points = mutableListOf<Pair<Int, Int>>()
+                for (i in 1 until parts.size - 1 step 2) {
+                    val x = parts[i].toInt()
+                    val y = parts[i + 1].toInt()
+                    points.add(Pair(x, y))
+                }
+
+                if (points.size < 2)
+                        throw IllegalArgumentException("ContinuousSwipe requires at least 2 points")
+
+                Command.ContinuousSwipe(points, duration)
+            }
             "longpress", "long_press" -> {
                 if (parts.size != 4)
                         throw IllegalArgumentException("LongPress requires x, y, and duration")

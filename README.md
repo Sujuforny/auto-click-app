@@ -91,6 +91,9 @@ zoomin 500 800 400 1000
 
 # Zoom out (pinch gesture - x, y, distance, duration)
 zoomout 500 800 400 1000
+
+# Continuous swipe through multiple points (x1 y1 x2 y2 x3 y3 ... duration)
+continuousswipe 300 350 900 350 900 450 2000
 ```
 
 ### Timing Commands
