@@ -275,23 +275,23 @@ class AutoClickerService : AccessibilityService() {
                             command.endY,
                             command.duration
                     )
-                    delay(100)
+                    delay(command.duration + 100)
                 }
                 is Command.LongPress -> {
                     executeLongPress(command.x, command.y, command.duration)
-                    delay(100)
+                    delay(command.duration + 100)
                 }
                 is Command.ZoomIn -> {
                     executeZoomIn(command.x, command.y, command.distance, command.duration)
-                    delay(100)
+                    delay(command.duration + 100)
                 }
                 is Command.ZoomOut -> {
                     executeZoomOut(command.x, command.y, command.distance, command.duration)
-                    delay(100)
+                    delay(command.duration + 100)
                 }
                 is Command.ContinuousSwipe -> {
                     executeContinuousSwipe(command.points, command.duration)
-                    delay(100)
+                    delay(command.duration + 100)
                 }
                 is Command.Stop -> {
                     Log.d(TAG, "Stop command received")

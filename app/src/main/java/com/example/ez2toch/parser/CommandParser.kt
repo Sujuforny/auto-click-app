@@ -244,8 +244,10 @@ object CommandParser {
                 Command.Swipe(startX, startY, endX, endY, duration)
             }
             "continuousswipe", "continuous_swipe" -> {
-                // Minimum: x1 y1 x2 y2 duration = 5 parameters
-                if (parts.size < 5 || (parts.size - 1) % 2 != 0)
+                // Minimum: x1 y1 x2 y2 duration = 5 parameters (parts.size = 6 with command)
+                // Number of coordinate values = parts.size - 2 (exclude command and duration)
+                // This must be even to make pairs
+                if (parts.size < 6 || (parts.size - 2) % 2 != 0)
                         throw IllegalArgumentException(
                                 "ContinuousSwipe requires pairs of coordinates (x y) and duration at the end"
                         )
