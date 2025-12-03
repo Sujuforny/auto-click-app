@@ -141,3 +141,38 @@ delay 1000
 log Automation sequence completed
 logs Automation completed successfully!
 stop
+
+
+
+
+
+
+
+# ========= start =========
+delay 3000
+logs start bot
+# 1- open game
+call openGame
+
+# 2- wait loading to home screen     :label home
+label home
+call waitLoadingToHomeScreen
+
+# 3- zoom out and go to harvest
+call zoomOut
+
+# 4- harvest and dam
+call harvestAndDam
+
+# 5- click on shop
+call clickOnShop
+
+# 6- sell products
+call sellProducts
+
+# 7- change account
+call changeAccount
+
+# 8- goto label home
+goto home
+stop

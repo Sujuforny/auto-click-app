@@ -1,31 +1,3 @@
-# ========= start =========
-delay 3000
-logs start bot
-# 1- open game
-call openGame
-
-# 2- wait loading to home screen     :label home
-label home
-call waitLoadingToHomeScreen
-
-# 3- zoom out
-call zoomOut
-
-# 4- harvest and dam
-call harvestAndDam
-
-# 5- click on shop
-call clickOnShop
-
-# 6- sell products
-call sellProducts
-
-# 7- change account
-call changeAccount
-
-# 8- goto label home
-goto home
-stop
 
 
 
@@ -41,13 +13,16 @@ endfun
 
 # method zoom out
 fun zoomOut
-    zoomout 500 800 400 1000
+    zoomout 640 360 600 2000
+    delay 2000
+    swipe 143 58 800 700 3000
 endfun
 
 # method harvest and dam
 fun harvestAndDam
     click 530 220 # click on harvest and dam
     delay 2000
+    continuousswipe 300 350 900 350 900 400 900 450 2000
 endfun
 
 # method sell products
@@ -98,3 +73,32 @@ endfun
 # ========= check =========
 # method check it is current home screen
 # method check it is current shop screen
+
+
+
+
+delay 3000
+call openGame
+delay 3000
+
+call zoomOut
+
+stop
+
+
+delay 4000
+click 530 220
+delay 3000
+zoomout 640 360 600 2000
+delay 3000
+swipe 143 58 800 700 3000
+
+label home
+delay 3000
+continuousswipe 100 82 1187 66 1195 97 100 100 7000
+goto home
+
+
+delay 3000
+logs ehhehe
+continuousswipe 133 82 1133 82 5000
