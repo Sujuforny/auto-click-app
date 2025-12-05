@@ -201,6 +201,44 @@ class AutoClickerService : AccessibilityService() {
         }
     }
 
+    private fun executeMultiClick(points: List<Pair<Int, Int>>) {
+        try {
+            if (points.isEmpty()) {
+                Log.e(TAG, "MultiClick requires at least one point")
+                return
+            }
+
+            val gestureBuilder = GestureDescription.Builder()
+
+            // Create simultaneous tap for each point
+            points.forEach { (x, y) ->
+                val path = Path()
+                path.moveTo(x.toFloat(), y.toFloat())
+                gestureBuilder.addStroke(GestureDescription.StrokeDescription(path, 0, 100))
+            }
+
+            val gesture = gestureBuilder.build()
+
+            dispatchGesture(
+                    gesture,
+                    object : GestureResultCallback() {
+                        override fun onCompleted(gestureDescription: GestureDescription?) {
+                            super.onCompleted(gestureDescription)
+                            Log.d(TAG, "Multi-click performed at ${points.size} points")
+                        }
+
+                        override fun onCancelled(gestureDescription: GestureDescription?) {
+                            super.onCancelled(gestureDescription)
+                            Log.d(TAG, "Multi-click cancelled")
+                        }
+                    },
+                    null
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error performing multi-click: ${e.message}")
+        }
+    }
+
     fun executeCommandFile(filePath: String) {
         if (isClicking) {
             stopAutoClick()
@@ -258,7 +296,11 @@ class AutoClickerService : AccessibilityService() {
             when (command) {
                 is Command.Click -> {
                     performClick(command.x, command.y)
-                    delay(100) // Small delay between actions
+                    delay(100)
+                }
+                is Command.MultiClick -> {
+                    executeMultiClick(command.points)
+                    delay(100)
                 }
                 is Command.Delay -> {
                     delay(command.milliseconds)
@@ -279,7 +321,7 @@ class AutoClickerService : AccessibilityService() {
                 }
                 is Command.LongPress -> {
                     executeLongPress(command.x, command.y, command.duration)
-                    delay(command.duration + 100)
+                    delay(command.duration)
                 }
                 is Command.ZoomIn -> {
                     executeZoomIn(command.x, command.y, command.distance, command.duration)

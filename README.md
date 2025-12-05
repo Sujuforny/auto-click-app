@@ -76,6 +76,9 @@ command3 parameter1 parameter2 parameter3
 # Basic click at coordinates
 click 500 800
 
+# Multi-click (tap multiple locations simultaneously)
+multiclick 300 400 600 400 900 400
+
 # Three-finger tap
 threefingertap 300 400
 

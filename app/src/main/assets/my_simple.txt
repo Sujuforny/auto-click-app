@@ -1,7 +1,7 @@
 
 
 
-# method open game 
+# method open game ✅
 fun openGame
     click 530 220
 endfun
@@ -11,30 +11,115 @@ fun zoomIn
     zoomin 500 800 400 1000
 endfun
 
-# method zoom out
+# method zoom out ✅
 fun zoomOut
     zoomout 640 360 600 2000
     delay 2000
     swipe 143 58 800 700 3000
 endfun
 
-# method harvest and dam
+# method harvest and dam ✅
 fun harvestAndDam
-    click 530 220 # click on harvest and dam
+    repeat 2
+        click 712 290
+        delay 1000
+        continuousswipe 629 275 712 290 151 568 185 583 825 266 892 293 185 619 226 642 871 308 907 331 246 668 275 686 956 347 5000
+    
     delay 2000
-    continuousswipe 300 350 900 350 900 400 900 450 2000
 endfun
 
-# method sell products
-fun sellProducts
-    click 530 220 # click on sell products
-    delay 2000
+# method sell products 
+fun sellProducts ✅
+    multiclick 250 282 435 282 620 282 805 282 990 282 240 475 430 475 620 475 810 475 990 475
+    delay 1000
+    click 72 84
+    delay 1000
+    #box1
+    click 250 282 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500
+    #box2
+    click 435 282 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500
+    #box3
+    click 620 282 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500
+    #box4
+    click 805 282 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500
+    #box5
+    click 990 282 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500
+    #box6
+    click 240 475 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500
+
+    #box7
+    click 430 475 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500  
+    #box8
+    click 620 475 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500  
+    #box9
+    click 810 475 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    delay 500  
+    #box10
+    click 1000 475 
+    delay 1000
+    click 390 190
+    click 865 365
+    click 935 671
+    click 870 542
+    delay 1000  
+    click 1079 69
+    delay 1500
 endfun
 
 # method click on shop
 fun clickOnShop
-    click 530 220 # click on shop
-    delay 2000
+    swipe 143 58 800 700 2000
+    delay 1000
+    click 462 692 
+    delay 50
+    click 462 692
+    delay 3000
+    click 859 600
+    delay 1000
 endfun
 # method change account
 fun changeAccount
@@ -74,31 +159,19 @@ endfun
 # method check it is current home screen
 # method check it is current shop screen
 
-
-
-
-delay 3000
-call openGame
-delay 3000
-
+call harvestAndDam
+call clickOnShop
+call sellProducts
 call zoomOut
 
-stop
-
-
-delay 4000
-click 530 220
-delay 3000
-zoomout 640 360 600 2000
-delay 3000
-swipe 143 58 800 700 3000
-
-label home
-delay 3000
-continuousswipe 100 82 1187 66 1195 97 100 100 7000
-goto home
-
-
-delay 3000
-logs ehhehe
-continuousswipe 133 82 1133 82 5000
+fun test 
+    logs call test
+    delay 4000
+endfun
+fun test2 
+    logs call test2
+    delay 4000
+endfun
+call test
+call test2
+logs endddddd

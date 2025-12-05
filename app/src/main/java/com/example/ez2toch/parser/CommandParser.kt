@@ -216,6 +216,27 @@ object CommandParser {
                 val y = parts[2].toInt()
                 Command.Click(x, y)
             }
+            "multiclick", "multi_click" -> {
+                // Minimum: x1 y1 x2 y2 = 4 coordinates (parts.size = 5 with command)
+                // Number of coordinate values must be even
+                if (parts.size < 5 || (parts.size - 1) % 2 != 0)
+                        throw IllegalArgumentException(
+                                "MultiClick requires pairs of coordinates (x y)"
+                        )
+
+                // Parse coordinate pairs
+                val points = mutableListOf<Pair<Int, Int>>()
+                for (i in 1 until parts.size step 2) {
+                    val x = parts[i].toInt()
+                    val y = parts[i + 1].toInt()
+                    points.add(Pair(x, y))
+                }
+
+                if (points.size < 2)
+                        throw IllegalArgumentException("MultiClick requires at least 2 points")
+
+                Command.MultiClick(points)
+            }
             "delay" -> {
                 if (parts.size != 2)
                         throw IllegalArgumentException("Delay requires duration in milliseconds")

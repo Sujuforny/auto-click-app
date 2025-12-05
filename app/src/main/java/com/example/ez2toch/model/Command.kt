@@ -2,6 +2,7 @@ package com.example.ez2toch.model
 
 sealed class Command {
     data class Click(val x: Int, val y: Int) : Command()
+    data class MultiClick(val points: List<Pair<Int, Int>>) : Command()
     data class Delay(val milliseconds: Long) : Command()
     data class ThreeFingerTap(val x: Int, val y: Int) : Command()
     data class Swipe(
